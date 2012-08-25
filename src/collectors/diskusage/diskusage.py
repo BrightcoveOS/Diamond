@@ -42,7 +42,8 @@ class DiskUsageCollector(diamond.collector.Collector):
         config_help = super(DiskUsageCollector, self).get_default_config_help()
         config_help.update({
             'devices': "A regex of which devices to gather metrics for."
-                       + " Defaults to md, sd, and xvd devices",
+                       + " Defaults to md, sd, xvd, disk, and dm devices",
+            'sector_size': 'The size to use to calculate sector usage'
         })
         return config_help
 
@@ -54,7 +55,12 @@ class DiskUsageCollector(diamond.collector.Collector):
         config.update({
             'enabled':  'True',
             'path':     'iostat',
-            'devices':  'md[0-9]$|sd[a-z]+$|xvd[a-z]+$|disk[0-9]$'
+            'devices':  ('md[0-9]+$'
+                         + '|sd[a-z]+[0-9]*$'
+                         + '|xvd[a-z]+[0-9]*$'
+                         + '|disk[0-9]+$'
+                         + '|dm\-[0-9]+$'),
+            'sector_size': 512
         })
         return config
 
@@ -112,11 +118,13 @@ class DiskUsageCollector(diamond.collector.Collector):
                         'device': disk,
                         'reads': disks[disk].read_count,
                         'reads_merged': 0,
-                        'reads_sectors': disks[disk].read_bytes / 512,
+                        'reads_sectors': (disks[disk].read_bytes
+                                          / self.config['sector_size']),
                         'reads_milliseconds': disks[disk].read_time,
                         'writes': disks[disk].write_count,
                         'writes_merged': 0,
-                        'writes_sectors': disks[disk].write_bytes / 512,
+                        'writes_sectors': (disks[disk].write_bytes
+                                           / self.config['sector_size']),
                         'writes_milliseconds': disks[disk].write_time,
                         'io_in_progress': 0,
                         'io_milliseconds':
@@ -158,9 +166,7 @@ class DiskUsageCollector(diamond.collector.Collector):
 
                     if key.endswith('sectors'):
                         key = key.replace('sectors', unit)
-                        # Assume 512 byte sectors
-                        # TODO: Fix me to be detectable
-                        value /= 2
+                        value /= (1024 / self.config['sector_size'])
                         value = diamond.convertor.binary.convert(value=value,
                                                                  oldUnit='kB',
                                                                  newUnit=unit)
@@ -173,7 +179,10 @@ class DiskUsageCollector(diamond.collector.Collector):
                     # io_in_progress is a point in time counter, !derivative
                     if key != 'io_in_progress':
                         metric_value = self.derivative(
-                            metric_name, value, self.MAX_VALUES[key])
+                            metric_name,
+                            value,
+                            self.MAX_VALUES[key],
+                            time_delta=False)
                     else:
                         metric_value = value
 
@@ -203,6 +212,8 @@ class DiskUsageCollector(diamond.collector.Collector):
             metrics['average_queue_length'] = (metrics['io_milliseconds']
                                                / time_delta * 1000.0)
             metrics['await'] = 0
+            metrics['read_await'] = 0
+            metrics['write_await'] = 0
             metrics['service_time'] = 0
             metrics['iops'] = (metrics['reads']
                                + metrics['writes']) / time_delta
@@ -223,6 +234,12 @@ class DiskUsageCollector(diamond.collector.Collector):
                                            / metrics['io'])
                 metrics['await'] = (metrics['io_milliseconds_weighted']
                                     / metrics['io'])
+                if metrics['reads'] > 0:
+                    metrics['read_await'] = (metrics['reads_milliseconds']
+                                             / metrics['reads'])
+                if metrics['writes'] > 0:
+                    metrics['write_await'] = (metrics['writes_milliseconds']
+                                              / metrics['writes'])
                 metrics['util_percentage'] = (metrics['io']
                                               * metrics['service_time']
                                               / 1000.0) * 100.0

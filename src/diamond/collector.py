@@ -67,10 +67,7 @@ class Collector(object):
 
         # Handle some config file changes transparently
         if isinstance(self.config['byte_unit'], basestring):
-            units = self.config['byte_unit'].split()
-            self.config['byte_unit'] = []
-            for unit in units:
-                self.config['byte_unit'].append(unit)
+            self.config['byte_unit'] = self.config['byte_unit'].split()
 
     def get_default_config_help(self):
         """
@@ -123,6 +120,22 @@ class Collector(object):
             # Default numeric output
             'byte_unit': 'byte',
         }
+
+    def get_stats_for_upload(self, config=None):
+        if config is None:
+            config = self.config
+
+        stats = {}
+
+        if 'enabled' in config:
+            stats['enabled'] = config['enabled']
+        else:
+            stats['enabled'] = False
+
+        if 'interval' in config:
+            stats['interval'] = config['interval']
+
+        return stats
 
     def get_schedule(self):
         """
@@ -224,7 +237,8 @@ class Collector(object):
         for handler in self.handlers:
             handler.process(metric)
 
-    def derivative(self, name, new, max_value=0):
+    def derivative(self, name, new, max_value=0,
+                   time_delta=True, interval=None):
         """
         Calculate the derivative of the metric.
         """
@@ -238,8 +252,17 @@ class Collector(object):
                 old = old - max_value
             # Get Change in X (value)
             derivative_x = new - old
+
+            # If we pass in a interval, use it rather then the configured one
+            if interval is None:
+                interval = int(self.config['interval'])
+
             # Get Change in Y (time)
-            derivative_y = int(self.config['interval'])
+            if time_delta:
+                derivative_y = interval
+            else:
+                derivative_y = 1
+
             result = float(derivative_x) / float(derivative_y)
         else:
             result = 0
@@ -262,3 +285,8 @@ class Collector(object):
         except Exception:
             # Log Error
             self.log.error(traceback.format_exc())
+        finally:
+            # After collector run, invoke a flush
+            # method on each handler. 
+            for handler in self.handlers:
+                handler.flush()
