@@ -27,7 +27,7 @@ class FacetLoadAverageTest(AbstractFacetTest):
         self.assertTrue('loadavg' in self.facet)
         self.assertTrue('loadavg' in self.facet.list())
         self.assertTrue('loadavg' in self.facet.provider.modules.keys()) 
-        self.assertTrue(issubclass(self.facet['loadavg'].__class__, facet.modules.LoadAverageModule)) 
+        self.assertTrue(issubclass(self.facet.loadavg.__class__, facet.modules.LoadAverageModule)) 
 
     def test_get_load_average(self):
         self.assertTrue(isinstance(self.facet['loadavg'].get_load_average(), tuple))
@@ -38,13 +38,13 @@ class FacetCPUStatTest(AbstractFacetTest):
         self.assertTrue('cpu' in self.facet)
         self.assertTrue('cpu' in self.facet.list())
         self.assertTrue('cpu' in self.facet.provider.modules.keys()) 
-        self.assertTrue(issubclass(self.facet['cpu'].__class__, facet.modules.CPUStatModule)) 
+        self.assertTrue(issubclass(self.facet.cpu.__class__, facet.modules.CPUStatModule)) 
     
     def test_get_cpu_count(self):
         self.assertTrue(self.facet['cpu'].get_cpu_count() > 0) 
 
     def test_get_cpu_usage(self):
-        self.assertTrue(isinstance(self.facet['cpu'].get_cpu_usage(), dict))
+        self.assertTrue(isinstance(self.facet.cpu.get_cpu_usage(), dict))
 
 
 if __name__ == "__main__":

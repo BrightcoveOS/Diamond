@@ -90,6 +90,16 @@ class Facet(object):
     def provider(self):
         return self._provider
 
+    def __getattr__(self, attr):
+        module_name = str(attr)
+        if module_name in self:
+            return self[module_name]
+        else:
+            raise AttributeError("Unknown module type: %s" % module_name) 
+
+    def __hasattr__(self, attr):
+        return str(attr) in self
+
     def list(self):
         return self.provider.modules.keys()
 

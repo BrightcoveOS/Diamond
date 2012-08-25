@@ -26,9 +26,9 @@ class SunOSProvider(facet.FacetProvider):
             load_1m = system_misc['avenrun_1min']/256.0
             load_5m = system_misc['avenrun_5min']/256.0
             load_15m = system_misc['avenrun_15min']/256.0
-            total_proc = system_misc['nproc']
-            running_proc = 0
-            return (load_1m, load_5m, load_15m, total_proc, running_proc) 
+            processes_total = system_misc['nproc']
+            processes_running = 0
+            return (load_1m, load_5m, load_15m, processes_total, processes_running) 
  
     class SunOSCPUStatModule(facet.modules.CPUStatModule):
 
