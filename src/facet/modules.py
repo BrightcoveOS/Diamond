@@ -11,24 +11,27 @@ class LoadAverageModule(facet.FacetModule):
         return FACET_MODULE_LOADAVG 
     
     def get_load_average(self):
-        pass
+        """
+        Return a tuple of (1 min load, 5 min load, 15 min load, total processes, running processes)
+        """
+        raise NotImplementedError() 
     
-    def get_running_processes(self):
-        pass
-
-    def get_total_processes(self):
-        pass
-
 class CPUStatModule(facet.FacetModule):
 
     def get_module_type(self):
         return FACET_MODULE_CPU
 
     def get_cpu_count(self):
-        pass
+        """
+        Return the number of cpu's in the system
+        """
+        raise NotImplementedError() 
 
     def get_cpu_usage(self, cpu=None):
-        pass
+        """
+        Return a dict of cpu usage
+        """
+        raise NotImplementedError() 
 
 class MemoryStatModule(facet.FacetModule):
 

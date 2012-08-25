@@ -4,10 +4,13 @@ import pprint as pp
 import inspect
 
 class FacetProvider(object):
-    
-    def __init__(self):
+    """
+    """
+ 
+    def __init__(self, **kwargs):
         self._modules = {} 
-
+        self._options = kwargs
+    
     def _load_provider_modules(self):
         for attr in dir(self):
             cls = getattr(self, attr)
@@ -16,33 +19,37 @@ class FacetProvider(object):
                     provider_module = cls()
                     self._modules[provider_module.get_module_type()] = provider_module
 
-    def __contains__(self, k):
-        return k in self._modules.keys()
+    @property
+    def options(self):
+        return self._options
 
-    def __getitem__(self, k):
-        if k not in self._modules.keys():
-            raise NotImplementedError("%s is not supported by %s" % (k, self.__class__.__name__))
-        return self._modules[k]
-
-    def __iter__(self):
-        for k in self._modules.keys():
-            yield k 
+    @property
+    def modules(self):
+        return self._modules
 
 class FacetModule(object):
-   
-    def __init__(self):
-        pass 
+    """
+    """  
+ 
+    def __init__(self, **kwargs):
+        self._options = kwargs 
+
+    def update(self):
+        pass
 
     def get_module_type(self):
         return NotImplementedError()         
 
 class Facet(object):
+    """
+    """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self._platform = sys.platform
+        self._options = kwargs 
 
         # Load platform provider
-        self._platform_provider = self._load_platform_provider(self._platform)
+        self._provider = self._load_platform_provider(self._platform)
  
     def _load_platform_provider(self, platform):
         # Get platform provider name
@@ -70,7 +77,7 @@ class Facet(object):
             if inspect.isclass(cls):            
                 if issubclass(cls, FacetProvider):
                     platform_provider_class = cls 
-                    return platform_provider_class()
+                    return platform_provider_class(**self._options)
      
     def _get_platform_provider_name(self, platform):
         if platform in ['linux']:
@@ -79,11 +86,22 @@ class Facet(object):
             return 'sunos' 
         raise NotImplementedError("Platform not supported: %s" % platform) 
 
-    def __contains__(self, k):
-        pass
+    @property
+    def provider(self):
+        return self._provider
 
-    def __getitem(self, k):
-        pass
+    def list(self):
+        return self.provider.modules.keys()
+
+    def __contains__(self, k):
+        return k in self.provider.modules.keys()
+
+    def __getitem__(self, k):
+        if k not in self.provider.modules.keys():
+            raise NotImplementedError("%s is not supported by %s" % (k, self.__class__.__name__))
+        return self.provider.modules[k]
 
     def __iter__(self):
-        pass 
+        for k in self.provider.modules.values():
+            yield k 
+    
