@@ -10,15 +10,9 @@ Uses /proc/loadavg to collect data on load average
 """
 
 import diamond.collector
-import re
-import os
-
-_RE = re.compile(r'([\d.]+) ([\d.]+) ([\d.]+) (\d+)/(\d+)')
-
+from facet import Facet
 
 class LoadAverageCollector(diamond.collector.Collector):
-
-    PROC = '/proc/loadavg'
 
     def get_default_config_help(self):
         config_help = super(LoadAverageCollector,
@@ -40,16 +34,10 @@ class LoadAverageCollector(diamond.collector.Collector):
         return config
 
     def collect(self):
-        if not os.access(self.PROC, os.R_OK):
-            return None
-
-        file = open(self.PROC)
-        for line in file:
-            match = _RE.match(line)
-            if match:
-                self.publish('01', float(match.group(1)), 2)
-                self.publish('05', float(match.group(2)), 2)
-                self.publish('15', float(match.group(3)), 2)
-                self.publish('processes_running', int(match.group(4)))
-                self.publish('processes_total',   int(match.group(5)))
-        file.close()
+        facet = Facet()
+        load_1m, load_5m, load_15m, processes_total, processes_running = facet.loadavg.get_load_average()
+        self.publish('01', float(load_1m), 2)
+        self.publish('05', float(load_5m), 2)
+        self.publish('15', float(load_15m), 2)
+        self.publish('processes_running', int(processes_running))
+        self.publish('processes_total',   int(processes_total))
