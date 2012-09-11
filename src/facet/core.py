@@ -5,6 +5,7 @@ import inspect
 
 class FacetProvider(object):
     """
+    The FacetProvider class represents an collection of FacetModules implemented for a specific platform.
     """
  
     def __init__(self, **kwargs):
@@ -29,6 +30,7 @@ class FacetProvider(object):
 
 class FacetModule(object):
     """
+    The FacetModule class represents a group of API for gathering metrics. FacetModules are implemented for each support FacetProvider. 
     """  
  
     def __init__(self, **kwargs):
@@ -42,6 +44,7 @@ class FacetModule(object):
 
 class Facet(object):
     """
+    The Facet class represents the API entry point for accessing FacetModules.
     """
 
     def __init__(self, **kwargs):

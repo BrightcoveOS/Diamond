@@ -29,7 +29,7 @@ class CPUStatModule(facet.FacetModule):
 
     def get_cpu_usage(self, cpu=None):
         """
-        Return a dict of cpu usage
+        Return a dict of cpu usage 
         """
         raise NotImplementedError() 
 

@@ -23,7 +23,7 @@ class FacetProviderTest(AbstractFacetTest):
 
 class FacetLoadAverageTest(AbstractFacetTest):
     
-    def test_loadavg_module(self):
+   def test_loadavg_module(self):
         self.assertTrue('loadavg' in self.facet)
         self.assertTrue('loadavg' in self.facet.list())
         self.assertTrue('loadavg' in self.facet.provider.modules.keys()) 
