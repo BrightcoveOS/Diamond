@@ -3,6 +3,13 @@ import sys
 import pprint as pp
 import inspect
 
+class FacetError(Exception):
+    """
+    """   
+ 
+    def __init__(self, message):
+        Exception.__init__(self, message)
+
 class FacetProvider(object):
     """
     The FacetProvider class represents an collection of FacetModules implemented for a specific platform.
@@ -11,14 +18,25 @@ class FacetProvider(object):
     def __init__(self, **kwargs):
         self._modules = {} 
         self._options = kwargs
-    
-    def _load_provider_modules(self):
+
+    def _get_loadable_modules(self):
+        """
+        Return a list of classes to be loaded
+        """
+        loadable_modules = []
         for attr in dir(self):
             cls = getattr(self, attr)
             if inspect.isclass(cls) and cls != self.__class__:
                 if issubclass(cls, FacetModule):
-                    provider_module = cls()
-                    self._modules[provider_module.get_module_type()] = provider_module
+                    loadable_modules.append(cls)
+        return loadable_modules
+
+    def _load_provider_modules(self):
+        loadable_modules = self._get_loadable_modules()
+        for cls in loadable_modules:
+            # Initialize module
+            provider_module = cls(**self._options) 
+            self._modules[provider_module.get_module_type()] = provider_module
 
     @property
     def options(self):

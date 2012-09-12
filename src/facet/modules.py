@@ -27,9 +27,9 @@ class CPUStatModule(facet.FacetModule):
         """
         raise NotImplementedError() 
 
-    def get_cpu_usage(self, cpu=None):
+    def get_cpu_counters(self, cpu=None):
         """
-        Return a dict of cpu usage 
+        Return a dict of cpu usage counters 
         """
         raise NotImplementedError() 
 
@@ -37,6 +37,42 @@ class MemoryStatModule(facet.FacetModule):
 
     def get_module_type(self):
         return FACET_MODULE_MEMORY
+    
+    def get_memory_used(self):
+        """
+        Return the amount of memory in bytes that is in use 
+        """
+        raise NotImplementedError() 
+
+    def get_memory_total(self):
+        """
+        Return the amount of memory in bytes is available
+        """
+        raise NotImplementedError() 
+
+    def get_memory_free(self):
+        """
+        Return the amount of memory in bytes that is not in use
+        """
+        raise NotImplementedError() 
+
+    def get_swap_used(self):
+        """
+        Return the amount of swap in bytes that is in use
+        """
+        raise NotImplementedError() 
+
+    def get_swap_total(self):
+        """
+        Return the amount of swap in bytes that is available
+        """
+        raise NotImplementedError() 
+
+    def get_swap_free(self):
+        """
+        Return the amount of swap in bytes that is not in use
+        """
+        raise NotImplementedError() 
 
 class NetworkStatModule(facet.FacetModule):
     
