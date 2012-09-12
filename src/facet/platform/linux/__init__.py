@@ -1,7 +1,9 @@
-import facet
-import facet.modules
+import platform
 import re
 import os
+
+import facet
+import facet.modules
 
 if platform.architecture()[0] == '64bit':
     MAX_COUNTER = (2 ** 64) - 1
@@ -27,7 +29,7 @@ class LinuxProvider(facet.FacetProvider):
             self._options = kwargs
 
         def get_load_average(self):
-            if not os.access(self.PROC, os.R_OK):
+            if not os.access(self._PROC, os.R_OK):
                 return None
             file = open(self._PROC)
             for line in file:
@@ -108,8 +110,8 @@ class LinuxProvider(facet.FacetProvider):
                 if len(elements) >= 11:
                     results[cpu]['guest_nice'] = elements[10]
 
-                # Close File
-                file.close()
+            # Close File
+            file.close()
 
             return results
 
@@ -118,7 +120,7 @@ class LinuxProvider(facet.FacetProvider):
             Return the number of cpu's in the system
             """
             cpu_stats = self._get_cpu_stats()
-            return len(cpu_stats - 1)
+            return len(cpu_stats) - 1
 
         def get_cpu_counters(self, cpu=None):
             """
@@ -127,11 +129,10 @@ class LinuxProvider(facet.FacetProvider):
             Arguments:
             cpu -- return count for the given cpu, or total cpu if none
             """
-            if cpu < 0 or cpu >= self.get_cpu_count(): 
-                raise facet.FacetError("Unknown cpu: %d" % cpu) 
-
             cpu_stats = self._get_cpu_stats()
             if cpu:
+                if cpu < 0 or cpu >= self.get_cpu_count(): 
+                    raise facet.FacetError("Unknown cpu: %d" % int(cpu)) 
                 return cpu_stats[cpu]
             else:
                 return cpu_stats['total']

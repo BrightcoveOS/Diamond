@@ -101,7 +101,7 @@ class Facet(object):
                     return platform_provider_class(**self._options)
      
     def _get_platform_provider_name(self, platform):
-        if platform in ['linux']:
+        if platform in ['linux2']:
             return 'linux'
         if platform in ['sunos5']:
             return 'sunos' 
