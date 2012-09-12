@@ -54,25 +54,32 @@ class FacetMemoryStatTest(AbstractFacetTest):
         self.assertTrue('memory' in self.facet.list())
         self.assertTrue('memory' in self.facet.provider.modules.keys()) 
         self.assertTrue(issubclass(self.facet.memory.__class__, facet.modules.MemoryStatModule)) 
-    
-    def test_get_memory_used(self):    
-        self.assertTrue(self.facet.memory.get_memory_used() > 0)
-        self.assertTrue(self.facet.memory.get_memory_total() > 0)
-        self.assertTrue(self.facet.memory.get_memory_free() > 0)
-
+        
         print "used: %f" % (float(self.facet.memory.get_memory_used()) / 1024.0 / 1024.0)
         print "total: %f" % (float(self.facet.memory.get_memory_total()) / 1024.0 / 1024.0)
         print "free: %f" % (float(self.facet.memory.get_memory_free()) / 1024.0 / 1024.0)
+        
+        print "swap used: %f" % (float(self.facet.memory.get_swap_used()) / 1024.0 / 1024.0)
+        print "swap total: %f" % (float(self.facet.memory.get_swap_total()) / 1024.0 / 1024.0)
+        print "swap free: %f" % (float(self.facet.memory.get_swap_free()) / 1024.0 / 1024.0)
+    
+    def test_get_memory_used(self):    
+        self.assertTrue(self.facet.memory.get_memory_used() == self.facet.memory.get_memory_total() - self.facet.memory.get_memory_free())
+
+    def test_get_memory_total(self):
+        self.assertTrue(self.facet.memory.get_memory_total() > 0)
+
+    def test_get_memory_free(self):
+        self.assertTrue(self.facet.memory.get_memory_free() > 0)
 
     def test_get_swap_used(self):
-        print self.facet.memory.get_swap_used()
-        time.sleep(1)
-        print self.facet.memory.get_swap_used() / 1024.0 / 1024.0
+        self.assertTrue(self.facet.memory.get_swap_used() == self.facet.memory.get_swap_total() - self.facet.memory.get_swap_free())
 
     def test_get_swap_total(self):       
-        print self.facet.memory.get_swap_total()
-        time.sleep(1)
-        print self.facet.memory.get_swap_total() / 1024.0 / 1024.0
+        self.assertTrue(self.facet.memory.get_swap_total() > 0)
+
+    def test_get_swap_free(self):
+        self.assertTrue(self.facet.memory.get_swap_free() > 0)
  
 if __name__ == "__main__":
     unittest.main()

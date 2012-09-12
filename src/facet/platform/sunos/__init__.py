@@ -1,8 +1,15 @@
+import os
+import sys
+import re
+import shlex
+import subprocess
 import resource
-import facet
-import facet.modules
+
 import kstat
 import kstat.stats
+
+import facet
+import facet.modules
 
 class SunOSProvider(facet.FacetProvider):
 
@@ -74,7 +81,10 @@ class SunOSProvider(facet.FacetProvider):
             return usage 
 
     class SunOSMemoryStatModule(facet.modules.MemoryStatModule):
-   
+
+        _SWAP_COMMAND = '/usr/sbin/swap'
+        _SWAP_COMMAND_RE = re.compile(r'([A-Za-z0-9/]+)\s(.+)\s([0-9]+)K\s([0-9]+)K\s([0-9]+)K')
+ 
         def __init__(self, **kwargs):
             self._options = kwargs 
             self._kstat = kstat.Kstat()
@@ -82,6 +92,8 @@ class SunOSProvider(facet.FacetProvider):
             self._last_swap_used = 0 
             self._last_swap_total_timestamp = 0
             self._last_swap_total = 0 
+            self._last_swap_free_timestamp = 0
+            self._last_swap_free = 0 
 
         def _get_installed_pages(self):
             self._kstat.update()
@@ -91,11 +103,6 @@ class SunOSProvider(facet.FacetProvider):
             for kstat_lgrp in self._kstat.retrieve_all('lgrp', -1, None):
                 installed_pages += kstat_lgrp['pages installed']
             return installed_pages
-
-        def get_updates_since_boot(self):
-            self._kstat.update()
-            kstat_sysinfo = self._kstat.retrieve('unix', -1, 'sysinfo', kstat.stats.sysinfo_t)
-            return kstat_sysinfo['updates']
 
         def get_memory_used(self):
             """
@@ -124,49 +131,47 @@ class SunOSProvider(facet.FacetProvider):
             kstat_system_pages = self._kstat.retrieve('unix', -1, 'system_pages')
             free_pages = kstat_system_pages['freemem']
             return free_pages * resource.getpagesize() 
- 
+
+        def _run_swap_command(self):
+            """
+            Execute the swap command and return swaplo, blocks and free
+            """
+            # Ensure swap command is executable
+            if not os.access(self._SWAP_COMMAND,os.X_OK):
+                raise FacetError("Unable to execute: %s. No such file or directory." % (self._SWAP_COMMAND))
+
+            # Execute swap command
+            command = "%s -lk" % (self._SWAP_COMMAND)
+            p = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
+            (stdout, stderr) = p.communicate()
+            if not p or p.returncode != 0:
+                raise facet.FacetError("Unable to execute: %s" % command)
+
+            # Parse swap command output
+            result = None
+            for line in stdout.split('\n'):
+                match = self._SWAP_COMMAND_RE.match(line)
+                if match:
+                    result = (int(match.group(3)), int(match.group(4)), int(match.group(5)))
+            return result
+
         def get_swap_used(self):
             """
-            Return the amount of swap in bytes that is in use. Returns none if no data is available.
+            Return the amount of swap in bytes that is in use
             """
-            self._kstat.update()
-            kstat_vminfo = self._kstat.retrieve('unix', -1, 'vminfo', kstat.stats.vminfo_t)
-            current_swap_used = kstat_vminfo['swap_resv']
-            current_timestamp = kstat_vminfo['updates'] 
- 
-            if self._last_swap_used_timestamp > 0:
-                swap_used_bytes = ((current_swap_used - self._last_swap_used) / (current_timestamp - self._last_swap_used_timestamp)) * resource.getpagesize()
-            else:
-                swap_used_bytes = None
-
-            self._last_swap_used = current_swap_used 
-            self._last_swap_used_timestamp = current_timestamp
-
-            return swap_used_bytes 
+            swap_low, swap_total, swap_free = self._run_swap_command()
+            return ((swap_total - swap_free) * 1024)
  
         def get_swap_total(self):
             """
             Return the amount of swap in bytes that is available
             """
-            kstat_vminfo = self._kstat.retrieve('unix', -1, 'vminfo', kstat.stats.vminfo_t)
-            current_swap_total = kstat_vminfo['swap_free'] - kstat_vminfo['swap_resv']
-            current_timestamp = kstat_vminfo['updates'] 
- 
-            if self._last_swap_total_timestamp > 0:
-                swap_total_bytes = ((current_swap_total - self._last_swap_total) / (current_timestamp - self._last_swap_total_timestamp)) * resource.getpagesize()
-            else:
-                swap_total_bytes = None
-
-            self._last_swap_total = current_swap_total
-            self._last_swap_total_timestamp = current_timestamp
-
-            return swap_total_bytes 
+            swap_low, swap_total, swap_free = self._run_swap_command()
+            return (swap_total * 1024) 
 
         def get_swap_free(self):
             """
             Return the amount of swap in bytes that is not in use
             """
-            pass 
-       
-         
-
+            swap_low, swap_total, swap_free = self._run_swap_command()
+            return (swap_free * 1024) 
