@@ -29,15 +29,24 @@ class CPUStatModule(facet.FacetModule):
 
     def get_cpu_counters(self, cpu=None):
         """
-        Return a dict of cpu usage counters 
+        Return a dict of cpu usage counters
+        
+        Arguments:
+        cpu -- return count for the given cpu, or total cpu if none
         """
         raise NotImplementedError() 
+
+    def get_cpu_counters_max(self, counter):
+        """
+        Return the max value for a cpu usage counter
+        """
+        raise NotImplementedError()
 
 class MemoryStatModule(facet.FacetModule):
 
     def get_module_type(self):
         return FACET_MODULE_MEMORY
-    
+ 
     def get_memory_used(self):
         """
         Return the amount of memory in bytes that is in use 

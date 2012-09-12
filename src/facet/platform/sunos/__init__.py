@@ -10,6 +10,8 @@ import kstat.stats
 
 import facet
 import facet.modules
+    
+MAX_COUNTER_UINT64 = (2 ** 64) - 1
 
 class SunOSProvider(facet.FacetProvider):
 
@@ -38,6 +40,13 @@ class SunOSProvider(facet.FacetProvider):
             return (load_1m, load_5m, load_15m, processes_total, processes_running) 
  
     class SunOSCPUStatModule(facet.modules.CPUStatModule):
+        
+        _MAX_VALUES = {
+            'user': MAX_COUNTER_UINT64, 
+            'system': MAX_COUNTER_UINT64, 
+            'idle': MAX_COUNTER_UINT64, 
+            'iowait': MAX_COUNTER_UINT64 
+        }
 
         def __init__(self, **kwargs):
             self._options = kwargs
@@ -79,6 +88,12 @@ class SunOSProvider(facet.FacetProvider):
             usage['user'] = kstat_cpu_stat['cpu_ticks_user'] 
             usage['iowait'] = kstat_cpu_stat['cpu_ticks_wait']
             return usage 
+        
+        def get_cpu_counters_max(self, counter):
+            """
+            Return the max value for a cpu usage counter
+            """
+            return self._MAX_VALUES[counter]
 
     class SunOSMemoryStatModule(facet.modules.MemoryStatModule):
 
@@ -137,15 +152,15 @@ class SunOSProvider(facet.FacetProvider):
             Execute the swap command and return swaplo, blocks and free
             """
             # Ensure swap command is executable
-            if not os.access(self._SWAP_COMMAND,os.X_OK):
-                raise FacetError("Unable to execute: %s. No such file or directory." % (self._SWAP_COMMAND))
+            if not os.access(self._SWAP_COMMAND, os.X_OK):
+                raise FacetError("Unable to execute: %s." % (self._SWAP_COMMAND))
 
             # Execute swap command
             command = "%s -lk" % (self._SWAP_COMMAND)
             p = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
             (stdout, stderr) = p.communicate()
             if not p or p.returncode != 0:
-                raise facet.FacetError("Unable to execute: %s" % command)
+                raise facet.FacetError("Failed to execute: %s" % command)
 
             # Parse swap command output
             result = None

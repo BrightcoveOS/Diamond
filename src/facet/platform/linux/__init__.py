@@ -3,6 +3,11 @@ import facet.modules
 import re
 import os
 
+if platform.architecture()[0] == '64bit':
+    MAX_COUNTER = (2 ** 64) - 1
+else:
+    MAX_COUNTER = (2 ** 32) - 1
+
 class LinuxProvider(facet.FacetProvider):
 
     def __init__(self, **kwargs):
@@ -38,11 +43,101 @@ class LinuxProvider(facet.FacetProvider):
  
     class LinuxCPUStatModule(facet.modules.CPUStatModule):
 
+        _PROC = '/proc/stat'
+
+        _MAX_VALUES = {
+            'user': MAX_COUNTER,
+            'nice': MAX_COUNTER,
+            'system': MAX_COUNTER,
+            'idle': MAX_COUNTER,
+            'iowait': MAX_COUNTER,
+            'irq': MAX_COUNTER,
+            'softirq': MAX_COUNTER,
+            'steal': MAX_COUNTER,
+            'guest': MAX_COUNTER,
+            'guest_nice': MAX_COUNTER,
+        }
+
         def __init__(self, **kwargs):
             self._options = kwargs
- 
-        def get_cpu_count(self):
-            pass
 
-        def get_cpu_usage(self, cpu=None):
-            pass
+        def _get_cpu_stats(self):
+            """
+            Return cpu stats from '/proc/stat'            
+            """
+            
+            # Check access file 
+            if not os.access(self._PROC, os.R_OK):
+                raise FacetError("Unable to read: %s" % (self._PROC))
+
+            results = {}
+
+            # Open file
+            file = open(self._PROC)
+
+            for line in file:
+                if not line.startswith('cpu'):
+                    continue
+
+                elements = line.split()
+                
+                cpu = elements[0]
+                if cpu == 'cpu':
+                    cpu = 'total'
+
+                results[cpu] = {}
+
+                if len(elements) >= 2:
+                    results[cpu]['user'] = elements[1]
+                if len(elements) >= 3:
+                    results[cpu]['nice'] = elements[2]
+                if len(elements) >= 4:
+                    results[cpu]['system'] = elements[3]
+                if len(elements) >= 5:
+                    results[cpu]['idle'] = elements[4]
+                if len(elements) >= 6:
+                    results[cpu]['iowait'] = elements[5]
+                if len(elements) >= 7:
+                    results[cpu]['irq'] = elements[6]
+                if len(elements) >= 8:
+                    results[cpu]['softirq'] = elements[7]
+                if len(elements) >= 9:
+                    results[cpu]['steal'] = elements[8]
+                if len(elements) >= 10:
+                    results[cpu]['guest'] = elements[9]
+                if len(elements) >= 11:
+                    results[cpu]['guest_nice'] = elements[10]
+
+                # Close File
+                file.close()
+
+            return results
+
+        def get_cpu_count(self):
+            """
+            Return the number of cpu's in the system
+            """
+            cpu_stats = self._get_cpu_stats()
+            return len(cpu_stats - 1)
+
+        def get_cpu_counters(self, cpu=None):
+            """
+            Return a dict of cpu usage counters
+            
+            Arguments:
+            cpu -- return count for the given cpu, or total cpu if none
+            """
+            if cpu < 0 or cpu >= self.get_cpu_count(): 
+                raise facet.FacetError("Unknown cpu: %d" % cpu) 
+
+            cpu_stats = self._get_cpu_stats()
+            if cpu:
+                return cpu_stats[cpu]
+            else:
+                return cpu_stats['total']
+    
+        def get_cpu_counters_max(self, counter):
+            """
+            Return the max value for a cpu usage counter
+            """
+            return self._MAX_VALUES[counter]
