@@ -3,13 +3,20 @@ import sys
 import pprint as pp
 import inspect
 
+def get_platform_provider_name(platform):
+    if platform in ['linux2']:
+        return 'linux'
+    if platform in ['sunos5']:
+        return 'sunos' 
+    raise NotImplementedError("Platform not supported: %s" % platform) 
+
 class FacetError(Exception):
     """
     """   
  
     def __init__(self, message):
         Exception.__init__(self, message)
-
+    
 class FacetProvider(object):
     """
     The FacetProvider class represents an collection of FacetModules implemented for a specific platform.
@@ -74,7 +81,7 @@ class Facet(object):
  
     def _load_platform_provider(self, platform):
         # Get platform provider name
-        platform_provider_name = self._get_platform_provider_name(platform)
+        platform_provider_name = get_platform_provider_name(platform)
 
         # Generate platform provider path 
         platform_provider_path = os.path.join(os.path.dirname(__file__), 'platform', platform_provider_name)
@@ -100,13 +107,6 @@ class Facet(object):
                     platform_provider_class = cls 
                     return platform_provider_class(**self._options)
      
-    def _get_platform_provider_name(self, platform):
-        if platform in ['linux2']:
-            return 'linux'
-        if platform in ['sunos5']:
-            return 'sunos' 
-        raise NotImplementedError("Platform not supported: %s" % platform) 
-
     @property
     def provider(self):
         return self._provider
