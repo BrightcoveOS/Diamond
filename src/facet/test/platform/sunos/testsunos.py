@@ -1,6 +1,10 @@
 import mock
 import unittest
 
+import testfacet
+
+import facet.platform.sunos
+
 class MockKstatResults(object):
     
     def __init__(self):
@@ -12,5 +16,8 @@ class MockKstatResults(object):
     def get_stats(self, module, instance, name):
         return self._stats[(module, instance, name)] 
 
-class AbstractSunOSTest(unittest.TestCase):
-    pass
+class AbstractSunOSTest(testfacet.AbstractFacetModuleTest):
+    
+    def get_platform_provider(self):
+        return facet.platform.sunos.SunOSProvider 
+    

@@ -23,6 +23,34 @@ class AbstractFacetTest(unittest.TestCase):
     def tearDown(self):
         self.facet = None 
 
+class AbstractFacetModuleTest(unittest.TestCase):
+
+    def get_platform_provider(self):
+        raise NotImplementedError() 
+    
+    def get_fixture_path(self, fixture_name):
+        file = os.path.join(os.path.dirname(inspect.getfile(self.__class__)),
+                            'fixtures',
+                            fixture_name)
+        if not os.access(file, os.R_OK):
+            print "Missing Fixture " + file
+        return file
+
+    def get_fixture(self, fixture_name):
+        file = open(self.get_fixture_path(fixture_name), 'r')
+        data = StringIO(file.read())
+        file.close()
+        return data
+    
+    def get_module(self, module_type):
+        if not hasattr(self, '_module'):
+            self._module = None
+        if not self._module:
+            platform_provider_class = self.get_platform_provider()
+            platform_provider = platform_provider_class()
+            self._module = platform_provider.modules[module_type]
+        return self._module
+
 class FacetLoadAverageTest(AbstractFacetTest):
     
     def test_loadavg_module(self):
@@ -82,9 +110,9 @@ class FacetMemoryStatTest(AbstractFacetTest):
     def test_get_swap_free(self):
         self.assertTrue(self.facet.memory.get_swap_free() > 0)
 
-def get_facet_provider_tests():
+def get_facet_provider_tests(platform):
     
-    facet_provider_name = facet.get_platform_provider_name(sys.platform) 
+    facet_provider_name = facet.get_platform_provider_name(platform) 
     facet_provider_test_path = os.path.join(os.path.dirname(__file__), 'platform', facet_provider_name)
 
     # If the platform provider path does not exist, assume unsupported platform
@@ -132,12 +160,18 @@ if __name__ == "__main__":
                       default=1,
                       action="count",
                       help="verbose")
+    
+    parser.add_option("-p",
+                      "--platform",
+                      dest="platform",
+                      default=sys.platform, 
+                      help="platform")
 
     # Parse Command Line Args
     (options, args) = parser.parse_args()
 
     # Load Platform Specific Tests
-    platform_tests = get_facet_provider_tests() 
+    platform_tests = get_facet_provider_tests(options.platform) 
     tests = []
     for test_module in platform_tests:
         for attr_name in dir(platform_tests[test_module]):
@@ -148,12 +182,14 @@ if __name__ == "__main__":
                     tests.append(unittest.TestLoader().loadTestsFromTestCase(attr))
 
     # Load Base Tests
-    for attr_name in globals(): 
-        attr = globals()[attr_name] 
-        if inspect.isclass(attr):            
-            if issubclass(attr, unittest.TestCase):
-                print "Found Test: %s " % (attr_name)
-                tests.append(unittest.TestLoader().loadTestsFromTestCase(attr))
+    if options.platform == sys.platform:
+        # Note: if platform is overriden to a different platform, do not run base tests
+        for attr_name in globals(): 
+            attr = globals()[attr_name] 
+            if inspect.isclass(attr):            
+                if issubclass(attr, unittest.TestCase):
+                    print "Found Test: %s " % (attr_name)
+                    tests.append(unittest.TestLoader().loadTestsFromTestCase(attr))
 
     suite = unittest.TestSuite(tests)
     unittest.TextTestRunner(verbosity=options.verbose).run(suite)

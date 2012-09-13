@@ -29,8 +29,15 @@ class LinuxProvider(facet.FacetProvider):
             self._options = kwargs
 
         def get_load_average(self):
+            load_1m = None
+            load_5m = None
+            load_15m = None
+            processes_running = None
+            processes_total = None 
+ 
             if not os.access(self._PROC, os.R_OK):
-                return None
+                raise facet.FacetError("Unable to read: %s" % (self._PROC))
+
             file = open(self._PROC)
             for line in file:
                 match = self._RE.match(line)
@@ -41,6 +48,7 @@ class LinuxProvider(facet.FacetProvider):
                     processes_running = int(match.group(4)) 
                     processes_total = int(match.group(5))
             file.close()
+
             return (load_1m, load_5m, load_15m, processes_total, processes_running) 
  
     class LinuxCPUStatModule(facet.modules.CPUStatModule):
@@ -70,7 +78,7 @@ class LinuxProvider(facet.FacetProvider):
             
             # Check access file 
             if not os.access(self._PROC, os.R_OK):
-                raise FacetError("Unable to read: %s" % (self._PROC))
+                raise facet.FacetError("Unable to read: %s" % (self._PROC))
 
             results = {}
 
@@ -130,13 +138,16 @@ class LinuxProvider(facet.FacetProvider):
             cpu -- return count for the given cpu, or total cpu if none
             """
             cpu_stats = self._get_cpu_stats()
-            if cpu:
-                if cpu < 0 or cpu >= self.get_cpu_count(): 
-                    raise facet.FacetError("Unknown cpu: %d" % int(cpu)) 
-                return cpu_stats[cpu]
+            if cpu_stats:
+                if cpu is not None:
+                    if cpu < 0 or cpu >= self.get_cpu_count(): 
+                        raise facet.FacetError("Unknown cpu: %d" % int(cpu)) 
+                    return cpu_stats["cpu%d" % (cpu)]
+                else:
+                    return cpu_stats['total']
             else:
-                return cpu_stats['total']
-    
+                return None
+ 
         def get_cpu_counters_max(self, counter):
             """
             Return the max value for a cpu usage counter
