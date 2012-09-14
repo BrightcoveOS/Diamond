@@ -10,6 +10,8 @@ import kstat.stats
 
 import facet
 import facet.modules
+
+from facet.platform.sunos.native.utils import *
     
 MAX_COUNTER_UINT64 = (2 ** 64) - 1
 
@@ -190,3 +192,18 @@ class SunOSProvider(facet.FacetProvider):
             """
             swap_low, swap_total, swap_free = self._run_swap_command()
             return (swap_free * 1024) 
+
+    class SunOSDiskStatModule(facet.modules.DiskStatModule):
+
+        def get_disks(self):
+            print native.utils.get_mounts()
+            print native.utils.get_physical_device_path("sd0", "sd")
+
+        def get_disk_space_total(self, disk):
+            raise NotImplementedError() 
+
+        def get_disk_space_used(self, disk):
+            raise NotImplementedError() 
+
+        def get_disk_space_free(self, disk):
+            raise NotImplementedError() 

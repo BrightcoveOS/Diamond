@@ -4,6 +4,7 @@ FACET_MODULE_LOADAVG = 'loadavg'
 FACET_MODULE_CPU = 'cpu'
 FACET_MODULE_MEMORY = 'memory'
 FACET_MODULE_NETWORK = 'network'
+FACET_MODULE_DISK = 'disk'
 
 class LoadAverageModule(facet.FacetModule):
     
@@ -87,3 +88,20 @@ class NetworkStatModule(facet.FacetModule):
     
     def get_module_type(self):
         return FACET_MODULE_NETWORK
+
+class DiskStatModule(facet.FacetModule):
+    
+    def get_module_type(self):
+        return FACET_MODULE_DISK
+
+    def get_disks(self):
+        raise NotImplementedError() 
+
+    def get_disk_space_total(self, disk):
+        raise NotImplementedError() 
+
+    def get_disk_space_used(self, disk):
+        raise NotImplementedError() 
+
+    def get_disk_space_free(self, disk):
+        raise NotImplementedError() 

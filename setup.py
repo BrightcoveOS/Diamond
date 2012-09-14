@@ -8,7 +8,7 @@ if os.environ.get('USE_SETUPTOOLS'):
     from setuptools import setup
     setup_kwargs = dict(zip_safe=0)
 else:
-    from distutils.core import setup
+    from distutils.core import setup, Extension
     setup_kwargs = dict()
 
 data_files = [
@@ -60,6 +60,17 @@ def pkgPath(root, path, rpath="/"):
 
 pkgPath('share/diamond/collectors', 'src/collectors')
 
+def get_native_extensions():
+    facet_native_module = Extension('facet.platform.sunos.native.utils',
+                    define_macros = [('MAJOR_VERSION', '1'),
+                                     ('MINOR_VERSION', '0')],
+                    libraries = ['devinfo'],
+                    include_dirs = ['/usr/include/python2.6'],
+                    library_dirs = ['/usr/lib'],
+                    sources = ['src/facet/platform/sunos/native/utils.c'])
+    return [facet_native_module] 
+
+
 setup(
     name='diamond',
     version='3.0.2',
@@ -71,6 +82,7 @@ setup(
     package_dir={'': 'src'},
     packages=['diamond', 'diamond.handler'],
     scripts=['bin/diamond', 'bin/diamond-setup'],
+    ext_modules = get_native_extensions(), 
     data_files=data_files,
     install_requires=[
         'python-configobj', 'psutil', ],

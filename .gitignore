@@ -3,6 +3,7 @@ build/
 tmp/
 *.pyc
 *.sublime-*
+*.so
 MANIFEST
 conf/diamond.conf
 storage
