@@ -175,7 +175,7 @@ module_functions[] = {
 
 // Module initialiation 
 void
-initutils(void)
+initsunos_utils(void)
 {
-    Py_InitModule3("utils", module_functions, "SunOS helper extension");
+    Py_InitModule3("sunos_utils", module_functions, "SunOS utils extension");
 }

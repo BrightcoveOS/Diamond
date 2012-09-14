@@ -3,12 +3,7 @@ import sys
 import pprint as pp
 import inspect
 
-def get_platform_provider_name(platform):
-    if platform in ['linux', 'linux2']:
-        return 'linux'
-    if platform in ['sunos', 'sunos5']:
-        return 'sunos' 
-    raise NotImplementedError("Platform not supported: %s" % platform) 
+import facet.utils
 
 class FacetError(Exception):
     """
@@ -81,7 +76,7 @@ class Facet(object):
  
     def _load_platform_provider(self, platform):
         # Get platform provider name
-        platform_provider_name = get_platform_provider_name(platform)
+        platform_provider_name = facet.utils.get_platform_provider_name(platform)
 
         # Generate platform provider path 
         platform_provider_path = os.path.join(os.path.dirname(__file__), 'platform', platform_provider_name)

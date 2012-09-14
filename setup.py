@@ -61,13 +61,13 @@ def pkgPath(root, path, rpath="/"):
 pkgPath('share/diamond/collectors', 'src/collectors')
 
 def get_native_extensions():
-    facet_native_module = Extension('facet.platform.sunos.native.utils',
+    facet_native_module = Extension('facet.utils.sunos_utils',
                     define_macros = [('MAJOR_VERSION', '1'),
                                      ('MINOR_VERSION', '0')],
                     libraries = ['devinfo'],
                     include_dirs = ['/usr/include/python2.6'],
                     library_dirs = ['/usr/lib'],
-                    sources = ['src/facet/platform/sunos/native/utils.c'])
+                    sources = ['src/facet/utils/sunos_utils.c'])
     return [facet_native_module] 
 
 
