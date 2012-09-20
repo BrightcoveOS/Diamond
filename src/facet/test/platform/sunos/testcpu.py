@@ -22,7 +22,7 @@ class SunOSCPUStatModuleTest(testsunos.AbstractSunOSTest):
 
         mock_kstat_results = testsunos.MockKstatResults()
         mock_kstat_results.set_stats('unix', 0, 'system_misc', {'ncpus': 1}) 
-        mock_kstat.return_value.retrieve.side_effect = mock_kstat_results.get_stats
+        mock_kstat.return_value.retrieve.side_effect = mock_kstat_results.retrieve_stats
        
         self.assertTrue(module.get_cpu_count() == 1)
 
@@ -34,7 +34,7 @@ class SunOSCPUStatModuleTest(testsunos.AbstractSunOSTest):
         mock_kstat_results = testsunos.MockKstatResults()
         mock_kstat_results.set_stats('unix', 0, 'system_misc', {'ncpus': 1}) 
         mock_kstat_results.set_stats('cpu', 0, 'sys', {'cpu_ticks_idle': 10, 'cpu_ticks_kernel': 20, 'cpu_ticks_user': 30, 'cpu_ticks_wait': 40}) 
-        mock_kstat.return_value.retrieve.side_effect = mock_kstat_results.get_stats
+        mock_kstat.return_value.retrieve.side_effect = mock_kstat_results.retrieve_stats
         
         cpu_counters = module.get_cpu_counters(cpu=0)
         
@@ -67,7 +67,7 @@ class SunOSCPUStatModuleTest(testsunos.AbstractSunOSTest):
         mock_kstat_results.set_stats('unix', 0, 'system_misc', {'ncpus': 2}) 
         mock_kstat_results.set_stats('cpu', 0, 'sys', {'cpu_ticks_idle': 10, 'cpu_ticks_kernel': 20, 'cpu_ticks_user': 30, 'cpu_ticks_wait': 40}) 
         mock_kstat_results.set_stats('cpu', 1, 'sys', {'cpu_ticks_idle': 10, 'cpu_ticks_kernel': 20, 'cpu_ticks_user': 30, 'cpu_ticks_wait': 40}) 
-        mock_kstat.return_value.retrieve.side_effect = mock_kstat_results.get_stats
+        mock_kstat.return_value.retrieve.side_effect = mock_kstat_results.retrieve_stats
         
         cpu_counters = module.get_cpu_counters()
         

@@ -110,6 +110,14 @@ class FacetMemoryStatTest(AbstractFacetTest):
     def test_get_swap_free(self):
         self.assertTrue(self.facet.memory.get_swap_free() > 0)
 
+class FacetDiskStatTest(AbstractFacetTest):
+    
+    def test_get_disks(self):
+        self.assertTrue(len(self.facet.disk.get_disks()) > 0)
+
+    def test_get_mounts(self):
+        self.assertTrue(len(self.facet.disk.get_mounts()) > 0)
+
 def get_facet_provider_tests(platform):
     
     facet_provider_name = facet.get_platform_provider_name(platform) 

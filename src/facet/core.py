@@ -7,6 +7,7 @@ import facet.utils
 
 class FacetError(Exception):
     """
+    Exception for Facet
     """   
  
     def __init__(self, message):
@@ -50,7 +51,7 @@ class FacetProvider(object):
 
 class FacetModule(object):
     """
-    The FacetModule class represents a group of API for gathering metrics. FacetModules are implemented for each support FacetProvider. 
+    The FacetModule class represents a group of API for gathering metrics. FacetModules are implemented for each supported FacetProvider. 
     """  
  
     def __init__(self, **kwargs):

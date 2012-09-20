@@ -73,14 +73,14 @@ def get_native_extensions():
 
 setup(
     name='diamond',
-    version='3.0.2',
+    version='4.0.0',
     url='https://github.com/BrightcoveOS/Diamond',
     author='The Diamond Team',
     author_email='https://github.com/BrightcoveOS/Diamond',
     license='MIT License',
     description='Smart data producer for graphite graphing package',
     package_dir={'': 'src'},
-    packages=['diamond', 'diamond.handler'],
+    packages=['diamond', 'diamond.handler', 'facet', 'facet.utils', 'facet.platform', 'facet.platform.sunos', 'facet.platform.linux'],
     scripts=['bin/diamond', 'bin/diamond-setup'],
     ext_modules = get_native_extensions(), 
     data_files=data_files,

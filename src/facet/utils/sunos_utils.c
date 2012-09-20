@@ -2,29 +2,24 @@
 #include <Python.h>
 #include <stdio.h>
 #include <sys/mnttab.h>
-//#include <sys/types.h>
-//#include <sys/dkio.h>
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <string.h>
 #include <strings.h>
-//#include <unistd.h>
-//#include <stdlib.h>
-//#include <ctype.h>
-//#include <fcntl.h>
-//#include <sys/fcntl.h>
 #include <libdevinfo.h>
 #include <dirent.h>
 
-
 #define DEFAULT_PARTITION_FILENAME "/etc/mnttab"
 
-/*
+/**
  * Return the physical device path for the given logical device using the specified driver.
  *
  * Arguments: 
- *  - device name (e.g. sd0)
- *  - driver name (e.g. sd) 
+ *  device name (e.g. sd0)
+ *  driver name (e.g. sd)
+ *
+ * Returns:
+ *  Python string 
  */
 static PyObject * get_physical_device_path(PyObject *self, PyObject *args) {
     char *logical_device_name;
@@ -43,14 +38,12 @@ static PyObject * get_physical_device_path(PyObject *self, PyObject *args) {
     bzero(device_symlink, MAXPATHLEN); 
 
     // Parse Python Arguments    
-    if (!PyArg_ParseTuple(args, "ss", &logical_device_name, &logical_device_driver)) 
+    if (!PyArg_ParseTuple(args, "ss", &logical_device_name, &logical_device_driver))
         return NULL;
 
     // Get Device Tree Root
-    if ((root_node = di_init("/", DINFOCPYALL)) == DI_NODE_NIL) {
-        PyErr_SetString(PyExc_OSError, "Unable to retreive devinfo device tree");
-        return NULL;
-    }
+    if ((root_node = di_init("/", DINFOCPYALL)) == DI_NODE_NIL) 
+        return PyErr_Format(PyExc_OSError, "Unable to retreive devinfo device tree");
 
     // Traverse Device Tree
     node = di_drv_first_node(logical_device_driver, root_node);
@@ -67,6 +60,7 @@ static PyObject * get_physical_device_path(PyObject *self, PyObject *args) {
             if (strcmp(tmp_logical_device_name, logical_device_name) == 0) {
                 //printf("found logical device: %s path: %s\n", tmp_logical_device_name, physical_device_path);
 
+                // build a path in /devices using physical device path
                 strcpy(tmp_path, "/devices");
                 strcat(tmp_path, physical_device_path);
                 strcat(tmp_path, ":");
@@ -95,6 +89,9 @@ static PyObject * get_physical_device_path(PyObject *self, PyObject *args) {
     return Py_BuildValue("s", device_symlink);
 }
 
+/**
+ * Returns symlink in /dev/dsk for the given physical device path
+ */
 int lookup_physical_device_symlink(char * physical_device_path, char * device_symlink) {
     DIR     *dirp;
     struct  dirent *dp;
@@ -135,7 +132,7 @@ int lookup_physical_device_symlink(char * physical_device_path, char * device_sy
     return 1;
 }
 
-/*
+/**
  *
  */
 static PyObject * get_mounts(PyObject *self, PyObject *args) {
@@ -151,9 +148,8 @@ static PyObject * get_mounts(PyObject *self, PyObject *args) {
         path = DEFAULT_PARTITION_FILENAME;
 
     // Open Mount File 
-    fp = fopen(path, "r");
-    if (!fp) 
-        return NULL;
+    if ((fp = fopen(path, "r")) == NULL) 
+        return PyErr_SetFromErrno(PyExc_OSError); 
 
     // Read Mount File
     while (getmntent(fp, &mt) == 0) {

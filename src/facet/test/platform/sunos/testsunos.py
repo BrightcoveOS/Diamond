@@ -13,8 +13,11 @@ class MockKstatResults(object):
     def set_stats(self, module, instance, name, stats):
         self._stats[(module, instance, name)] = stats 
 
-    def get_stats(self, module, instance, name):
+    def retrieve_stats(self, module, instance, name):
         return self._stats[(module, instance, name)] 
+
+    def retrieve_all_stats(self, module, instance, name):
+        return self._stats.values() 
 
 class AbstractSunOSTest(testfacet.AbstractFacetModuleTest):
     

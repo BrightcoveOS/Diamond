@@ -94,8 +94,29 @@ class DiskStatModule(facet.FacetModule):
     def get_module_type(self):
         return FACET_MODULE_DISK
 
-    def get_disks(self):
+    def get_mounts(self):
+        """
+        Return a list of mounted filesystems
+        """
         raise NotImplementedError() 
+
+    def get_disks(self):
+        """
+        Return a list of disks
+        """
+        raise NotImplementedError()
+        
+    def get_disk_counters(self, disk):
+        """
+        Return a dict of disk stat counters for the specified disk
+        """
+        raise NotImplementedError()
+    
+    def get_disk_counters_max(self, counter):
+        """
+        Return the max value for a disk usage counter
+        """
+        raise NotImplementedError()
 
     def get_disk_space_total(self, disk):
         raise NotImplementedError() 

@@ -104,12 +104,6 @@ class SunOSProvider(facet.FacetProvider):
         def __init__(self, **kwargs):
             self._options = kwargs 
             self._kstat = kstat.Kstat()
-            self._last_swap_used_timestamp = 0
-            self._last_swap_used = 0 
-            self._last_swap_total_timestamp = 0
-            self._last_swap_total = 0 
-            self._last_swap_free_timestamp = 0
-            self._last_swap_free = 0 
 
         def _get_installed_pages(self):
             self._kstat.update()
@@ -194,15 +188,38 @@ class SunOSProvider(facet.FacetProvider):
 
     class SunOSDiskStatModule(facet.modules.DiskStatModule):
 
+        _DRIVERS = ['sd', 'dad', 'ssd']
+
+        def __init__(self, **kwargs):
+            self._options = kwargs
+            self._kstat = kstat.Kstat()
+
+        def get_mounts(self):
+            """
+            Return a list of mounted filesystems
+            """
+            return facet.utils.get_mounts() 
+
         def get_disks(self):
-            print facet.utils.get_mounts()
-            print facet.utils.get_physical_device_path("sd0", "sd")
+            """
+            Return a list of disks
+            """
+            disks = []
+            for drv in self._DRIVERS:
+                for kstat_disk in self._kstat.retrieve_all(drv, -1, None):
+                    if kstat_disk.data_class == 'disk':
+                        disk = facet.utils.get_physical_device_path(kstat_disk.name, drv).split('/')[-1]
+                        disks.append(disk)
+            return disks 
 
-        def get_disk_space_total(self, disk):
+        def get_disk_counters(self, disk):
+            raise NotImplementedError()
+
+        def get_disk_space_total(self, mount):
             raise NotImplementedError() 
 
-        def get_disk_space_used(self, disk):
+        def get_disk_space_used(self, mount):
             raise NotImplementedError() 
 
-        def get_disk_space_free(self, disk):
+        def get_disk_space_free(self, mount):
             raise NotImplementedError() 
