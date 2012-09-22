@@ -4,15 +4,61 @@
 #include <sys/mnttab.h>
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
 #include <string.h>
 #include <strings.h>
 #include <libdevinfo.h>
 #include <dirent.h>
+#include <sys/dkio.h>
 
 #define DEFAULT_PARTITION_FILENAME "/etc/mnttab"
 
 /**
- * Return the physical device path for the given logical device using the specified driver.
+ * Return information about the given physical disk
+ *
+ * Arguments:
+ *  device path (e.g /dev/rdsk/c3t0d0s0)
+ *
+ * Returns:
+ *  Python tuple (media type, logical block size, disk capacity) 
+ */
+static PyObject * get_physical_disk_info(PyObject *self, PyObject *args) {
+    char *physical_disk_path = NULL;
+    struct dk_minfo minfo; 
+    struct dk_minfo_ext minfo_ext;
+    int fd;
+
+    // Parse Python Arguments
+    if (!PyArg_ParseTuple(args, "s", &physical_disk_path))
+        return NULL;
+
+    // Open Device
+    fd = open(physical_disk_path, O_RDONLY);
+    if (fd < 0) 
+        return PyErr_SetFromErrno(PyExc_OSError); 
+    
+    // Get Media Info    
+    if (ioctl(fd, DKIOCGMEDIAINFO, &minfo) < 0) {
+        close(fd); 
+        return PyErr_SetFromErrno(PyExc_OSError); 
+    }
+
+    // Get Media Info    
+    if (ioctl(fd, DKIOCGMEDIAINFOEXT, &minfo_ext) < 0) {
+        close(fd); 
+        return PyErr_SetFromErrno(PyExc_OSError); 
+    }
+
+    // Close disk 
+    close(fd);
+    
+    // Return physical disk path 
+    return Py_BuildValue("(iil)", minfo.dki_media_type, minfo.dki_lbsize, minfo.dki_capacity);
+}
+
+/**
+ * Return the physical disk path for the given logical device using the specified driver.
  *
  * Arguments: 
  *  device name (e.g. sd0)
@@ -21,24 +67,23 @@
  * Returns:
  *  Python string 
  */
-static PyObject * get_physical_device_path(PyObject *self, PyObject *args) {
-    char *logical_device_name;
-    char *logical_device_driver;
-    char tmp_logical_device_name[MAXPATHLEN]; 
-    char *physical_device_path;
-    char *physical_device_minor_name;
-    char *physical_device_name;
-    int physical_device_instance;
+static PyObject * get_physical_disk_path(PyObject *self, PyObject *args) {
+    char *logical_disk_name;
+    char *logical_disk_driver;
+    char tmp_logical_disk_name[MAXPATHLEN];
+    char *device_path;
+    char *device_minor;
+    int device_instance;
     char tmp_path[MAXPATHLEN];
-    char device_symlink[MAXPATHLEN];
+    char physical_disk_path[MAXPATHLEN];
     di_node_t root_node;
     di_node_t node;
     di_minor_t minor = DI_MINOR_NIL;
 
-    bzero(device_symlink, MAXPATHLEN); 
+    bzero(physical_disk_path, MAXPATHLEN); 
 
     // Parse Python Arguments    
-    if (!PyArg_ParseTuple(args, "ss", &logical_device_name, &logical_device_driver))
+    if (!PyArg_ParseTuple(args, "ss", &logical_disk_name, &logical_disk_driver))
         return NULL;
 
     // Get Device Tree Root
@@ -46,36 +91,35 @@ static PyObject * get_physical_device_path(PyObject *self, PyObject *args) {
         return PyErr_Format(PyExc_OSError, "Unable to retreive devinfo device tree");
 
     // Traverse Device Tree
-    node = di_drv_first_node(logical_device_driver, root_node);
+    node = di_drv_first_node(logical_disk_driver, root_node);
     while (node != DI_NODE_NIL) {
         if ((minor = di_minor_next(node, DI_MINOR_NIL)) != DI_MINOR_NIL) {
-            physical_device_instance = di_instance(node);
-            physical_device_path = di_devfs_path(node);
-            physical_device_minor_name = di_minor_name(minor);
+            device_instance = di_instance(node);
+            device_path = di_devfs_path(node);
+            device_minor = di_minor_name(minor);
 
             // Logical Device is is "<driver><instance>"
-            strcpy(tmp_logical_device_name, logical_device_driver);
-            sprintf(tmp_logical_device_name, "%s%d", tmp_logical_device_name, physical_device_instance);
+            strcpy(tmp_logical_disk_name, logical_disk_driver);
+            sprintf(tmp_logical_disk_name, "%s%d", tmp_logical_disk_name, device_instance);
 
-            if (strcmp(tmp_logical_device_name, logical_device_name) == 0) {
-                //printf("found logical device: %s path: %s\n", tmp_logical_device_name, physical_device_path);
+            if (strcmp(tmp_logical_disk_name, logical_disk_name) == 0) {
 
-                // build a path in /devices using physical device path
+                // build a path in /devices using device path
                 strcpy(tmp_path, "/devices");
-                strcat(tmp_path, physical_device_path);
+                strcat(tmp_path, device_path);
                 strcat(tmp_path, ":");
-                strcat(tmp_path, physical_device_minor_name);
+                strcat(tmp_path, device_minor);
 
-                // lookup symlink in /dev/dsk for physical device path
-                if (lookup_physical_device_symlink(tmp_path, &device_symlink) != 0) {
+                // lookup symlink in /dev/dsk for pointing to device path
+                if (lookup_physical_device_symlink(tmp_path, &physical_disk_path) != 0) {
                     PyErr_SetString(PyExc_OSError, "Unable to lookup device symlink");
                 }
 
-                di_devfs_path_free(physical_device_path);
+                di_devfs_path_free(device_path);
                 break;
             }
 
-            di_devfs_path_free(physical_device_path);
+            di_devfs_path_free(device_path);
             node = di_drv_next_node(node);
         } else {
             node = di_drv_next_node(node);
@@ -85,8 +129,8 @@ static PyObject * get_physical_device_path(PyObject *self, PyObject *args) {
     // Close device tree
     di_fini(root_node);
         
-    // return symlink location 
-    return Py_BuildValue("s", device_symlink);
+    // Return physical disk path 
+    return Py_BuildValue("s", physical_disk_path);
 }
 
 /**
@@ -164,7 +208,8 @@ static PyObject * get_mounts(PyObject *self, PyObject *args) {
 // Module functions table
 static PyMethodDef
 module_functions[] = {
-    { "get_physical_device_path", get_physical_device_path, METH_VARARGS, "Return the physical device path for the given logical device using the specified driver." },
+    { "get_physical_disk_info", get_physical_disk_info, METH_VARARGS, "Return disk info for the given physical device"},
+    { "get_physical_disk_path", get_physical_disk_path, METH_VARARGS, "Return the physical device path for the given logical device using the specified driver." },
     { "get_mounts", get_mounts, METH_VARARGS, "Return a list of tuples containing info about the currently mounted filesystems." },
     { NULL }
 };

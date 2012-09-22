@@ -193,6 +193,17 @@ class SunOSProvider(facet.FacetProvider):
         def __init__(self, **kwargs):
             self._options = kwargs
             self._kstat = kstat.Kstat()
+        
+        def _get_kstat_disk(self, physical_disk_name):
+            """
+            Return a kstat object for the given disk     
+            """
+            for drv in self._DRIVERS:
+                for kstat_disk in self._kstat.retrieve_all(drv, -1, None):
+                    if kstat_disk.data_class == 'disk':
+                        if facet.utils.get_physical_disk_path(kstat_disk.name, drv).split('/')[-1] == physical_disk_name:
+                            return kstat_disk 
+            raise facet.FacetError("Unknown disk: %s" % (physical_disk_name))
 
         def get_mounts(self):
             """
@@ -208,11 +219,54 @@ class SunOSProvider(facet.FacetProvider):
             for drv in self._DRIVERS:
                 for kstat_disk in self._kstat.retrieve_all(drv, -1, None):
                     if kstat_disk.data_class == 'disk':
-                        disk = facet.utils.get_physical_device_path(kstat_disk.name, drv).split('/')[-1]
-                        disks.append(disk)
+                        physical_disk_name = facet.utils.get_physical_disk_path(kstat_disk.name, drv).split('/')[-1]
+                        disks.append(physical_disk_name)
             return disks 
+    
+        def get_disk_counters(self, physical_disk_name):
+            """
+            Return a dict of disk stat counters for the specified disk
+            """
+                       
+            """
+            typedef struct kstat_io {  
+                u_longlong_t nread;       /* number of bytes read */  
+                u_longlong_t nwritten;    /* number of bytes written */  
+                uint_t       reads;       /* number of read operations */  
+                uint_t       writes;      /* number of write operations */  
+                hrtime_t wtime;           /* cumulative wait (pre-service) time */  
+                hrtime_t wlentime;        /* cumulative wait length*time product*/  
+                hrtime_t wlastupdate;     /* last time wait queue changed */  
+                hrtime_t rtime;           /* cumulative run (service) time */  
+                hrtime_t rlentime;        /* cumulative run length*time product */  
+                hrtime_t rlastupdate;     /* last time run queue changed */  
+                uint_t wcnt;              /* count of elements in wait state */  
+                uint_trcnt;               /* count of elements in run state */  
+            } kstat_io_t;
+            """
+        
+            disk_counters = {'reads': 0L, 
+                             'reads_bytes': 0L, 
+                             'reads_milliseconds': 0L, 
+                             'writes': 0L, 
+                             'writes_bytes': 0L, 
+                             'writes_milliseconds': 0L} 
+    
+            kstat_disk = self._get_kstat_disk(physical_disk_name)
 
-        def get_disk_counters(self, disk):
+            disk_counters['reads'] = kstat_disk['reads']
+            disk_counters['reads_bytes'] = kstat_disk['nread']
+            disk_counters['reads_milliseconds'] = kstat_disk['rlentime']
+            disk_counters['writes'] = kstat_disk['writes']
+            disk_counters['writes_bytes'] = kstat_disk['nwritten']
+            disk_counters['writes_milliseconds'] = kstat_disk['wlentime'] 
+
+            return disk_counters 
+ 
+        def get_disk_counters_max(self, counter):
+            """
+            Return the max value for a disk usage counter
+            """
             raise NotImplementedError()
 
         def get_disk_space_total(self, mount):
