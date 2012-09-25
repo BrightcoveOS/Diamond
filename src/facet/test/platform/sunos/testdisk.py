@@ -8,9 +8,6 @@ import testsunos
 import facet
 import facet.modules
 
-import kstat
-from kstat.libkstat import KSTAT_TYPE_RAW, KSTAT_TYPE_IO, KSTAT_TYPE_NAMED 
-
 class SunOSDiskStatModuleTest(testsunos.AbstractSunOSTest):
     
     def setUp(self):
@@ -59,7 +56,28 @@ class SunOSDiskStatModuleTest(testsunos.AbstractSunOSTest):
         self._mock_kstat.return_value.retrieve_all.assert_any_call('dad', -1, None)      
         self._mock_kstat.return_value.retrieve_all.assert_any_call('ssd', -1, None)      
  
-    @patch('kstat.Kstat')
     @patch('facet.utils.get_physical_disk_path')
-    def test_get_disk_counters(self, mock_kstat, mock_utils):
-        pass
+    def test_get_disk_counters(self, mock_utils):
+        module = self.get_module(facet.modules.FACET_MODULE_DISK) 
+
+        # configure mock for facet.utils.get_physical_disk_path 
+        def mock_map_disk(disk, drv):
+            disk_map = {'sd0': '/dev/rdsk/c3t0d0s0', 'sd1': '/dev/rdsk/c3t1d0s0'}
+            return disk_map[disk]
+        mock_utils.side_effect = mock_map_disk
+                
+        self.add_mock_kstat_data('sd', '0', 'sd0', 'disk', data={'nread': 100L, 'nwritten': 200L, 'reads': 5L, 'writes': 10L, 'wlentime': 1000L, 'rlentime': 2000L})
+        self.add_mock_kstat_data('sd', '1', 'sd1', 'disk', data={'nread': 100L, 'nwritten': 200L, 'reads': 5L, 'writes': 10L, 'wlentime': 1000L, 'rlentime': 2000L})
+
+        # get disks
+        disk_counters = module.get_disk_counters('c3t0d0s0')
+       
+        self.assertTrue('reads' in disk_counters)
+        self.assertTrue('reads_bytes' in disk_counters) 
+        self.assertTrue('reads_milliseconds' in disk_counters)
+        self.assertTrue('writes' in disk_counters)
+        self.assertTrue('writes_bytes' in disk_counters)
+        self.assertTrue('writes_milliseconds' in disk_counters)
+
+        self._mock_kstat.return_value.retrieve_all.assert_any_call('sd', -1, None)      
+        mock_utils.assert_any_call('sd0', 'sd')

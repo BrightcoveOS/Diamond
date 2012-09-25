@@ -64,6 +64,10 @@ class AbstractSunOSTest(testfacet.AbstractFacetModuleTest):
         self._mock_kstat_instance_data.append(mock_kstat_data())
 
     def build_mock_kstat_data(self, mod, inst, name, data_class, data_type, data_count, data):
+
+        def mock_kstat_data_getitem(k):
+            return data[k]
+
         mock_kstat_data = MagicMock(name='kstat.KstatData')
         mock_kstat_data_instance = mock_kstat_data.return_value
         mock_kstat_data_instance.module = mod 
@@ -72,6 +76,8 @@ class AbstractSunOSTest(testfacet.AbstractFacetModuleTest):
         mock_kstat_data_instance.data_class = data_class
         mock_kstat_data_instance.data_type = data_type
         mock_kstat_data_instance.data_count = data_count
+        mock_kstat_data_instance.data = data
+        mock_kstat_data_instance.__getitem__.side_effect = mock_kstat_data_getitem
         return mock_kstat_data
 
     def get_platform_provider(self):
