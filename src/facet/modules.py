@@ -101,7 +101,7 @@ class NetworkStatModule(facet.FacetModule):
         """
         raise NotImplementedError()
     
-    def get_interface_counters_max(self, counter):
+    def get_interface_counters_max(self, interface, counter):
         """
         Return the max value for a network stat counter
         """
@@ -130,7 +130,7 @@ class DiskStatModule(facet.FacetModule):
         """
         raise NotImplementedError()
     
-    def get_disk_counters_max(self, counter):
+    def get_disk_counters_max(self, disk, counter):
         """
         Return the max value for a disk usage counter
         """

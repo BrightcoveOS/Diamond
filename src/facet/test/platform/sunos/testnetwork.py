@@ -55,7 +55,7 @@ class SunOSNetworkStatModuleTest(testsunos.AbstractSunOSTest):
                             'rbytes': 45784577L,
                             'rbytes64': 45784577L}
 
-        self.add_mock_kstat_data('link', '0', 'net0', 'net', data=net0_test_data)
+        self.add_mock_kstat_data('link', '0', 'net0', 'net', data=net0_test_data, data_count=len(net0_test_data))
         self.add_mock_kstat_data('lo', '0', 'lo0', 'net')
 
         # get interface counters
@@ -65,4 +65,5 @@ class SunOSNetworkStatModuleTest(testsunos.AbstractSunOSTest):
         self.assertTrue(interface_counters['opackets64'] == 402261L)       
  
         self._mock_kstat.return_value.retrieve_all.assert_any_call('link', -1, None)      
-        self._mock_kstat.return_value.retrieve_all.assert_any_call('lo', -1, None)     
+        self._mock_kstat.return_value.retrieve_all.assert_any_call('lo', -1, None)    
+

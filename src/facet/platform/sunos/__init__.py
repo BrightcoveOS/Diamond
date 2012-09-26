@@ -7,12 +7,16 @@ import resource
 
 import kstat
 import kstat.stats
+import kstat.libkstat
 
 import facet
 import facet.modules
 import facet.utils
-    
-MAX_COUNTER_UINT64 = (2 ** 64) - 1
+   
+MAX_COUNTER_INT32 = (2 ** 31) - 1 
+MAX_COUNTER_UINT32 = (2 ** 32) - 1 
+MAX_COUNTER_UINT64 = long((2L ** 64L) - 1)
+MAX_COUNTER_INT64 = long((2L ** 63L) - 1)
 
 class SunOSProvider(facet.FacetProvider):
 
@@ -44,9 +48,9 @@ class SunOSProvider(facet.FacetProvider):
         
         _MAX_VALUES = {
             'user': MAX_COUNTER_UINT64, 
-            'system': MAX_COUNTER_UINT64, 
+            'kernel': MAX_COUNTER_UINT64, 
             'idle': MAX_COUNTER_UINT64, 
-            'iowait': MAX_COUNTER_UINT64 
+            'wait': MAX_COUNTER_UINT64 
         }
 
         def __init__(self, **kwargs):
@@ -66,16 +70,16 @@ class SunOSProvider(facet.FacetProvider):
             """
             Return a dict of cpu usage counters 
             """
-            usage = {'idle': 0L, 'system':0L, 'user':0L, 'iowait':0L} 
+            usage = {'idle': 0L, 'kernel':0L, 'user':0L, 'wait':0L} 
             if cpu:
                 return self._get_cpu_counters(cpu)     
             else: 
                 for c in range(0, self.get_cpu_count()):
                     cpu_usage = self._get_cpu_counters(c)
                     usage['idle'] += cpu_usage['idle']
-                    usage['system'] += cpu_usage['system']
+                    usage['kernel'] += cpu_usage['kernel']
                     usage['user'] += cpu_usage['user']
-                    usage['iowait'] += cpu_usage['iowait']
+                    usage['wait'] += cpu_usage['wait']
             return usage 
 
         def _get_cpu_counters(self, cpu):
@@ -85,9 +89,9 @@ class SunOSProvider(facet.FacetProvider):
             usage = {}
             kstat_cpu_stat = self._kstat.retrieve('cpu', cpu, 'sys')
             usage['idle'] = kstat_cpu_stat['cpu_ticks_idle']
-            usage['system'] = kstat_cpu_stat['cpu_ticks_kernel']
+            usage['kernel'] = kstat_cpu_stat['cpu_ticks_kernel']
             usage['user'] = kstat_cpu_stat['cpu_ticks_user'] 
-            usage['iowait'] = kstat_cpu_stat['cpu_ticks_wait']
+            usage['wait'] = kstat_cpu_stat['cpu_ticks_wait']
             return usage 
         
         def get_cpu_counters_max(self, counter):
@@ -190,6 +194,28 @@ class SunOSProvider(facet.FacetProvider):
 
         _DRIVERS = ['lo', 'link']
 
+        _MAX_VALUES = {'brdcstrcv': MAX_COUNTER_UINT32, 
+                       'brdcstxmt': MAX_COUNTER_UINT32, 
+                       'collisions': MAX_COUNTER_UINT32, 
+                       'ierrors': MAX_COUNTER_UINT32, 
+                       'ifspeed': MAX_COUNTER_UINT64, 
+                       'ipackets': MAX_COUNTER_UINT32, 
+                       'ipackets64': MAX_COUNTER_UINT64, 
+                       'link_duplex': MAX_COUNTER_UINT32, 
+                       'link_state': MAX_COUNTER_UINT32, 
+                       'multircv': MAX_COUNTER_UINT32,  
+                       'multixmt':  MAX_COUNTER_UINT32, 
+                       'norcvbuf': MAX_COUNTER_UINT32,  
+                       'noxmtbuf': MAX_COUNTER_UINT32,  
+                       'obytes': MAX_COUNTER_UINT32,  
+                       'obytes64': MAX_COUNTER_UINT64, 
+                       'oerrors': MAX_COUNTER_UINT32,  
+                       'opackets': MAX_COUNTER_UINT32,  
+                       'opackets64': MAX_COUNTER_UINT64, 
+                       'rbytes': MAX_COUNTER_UINT32,  
+                       'rbytes64': MAX_COUNTER_UINT64, 
+                       'unknowns': MAX_COUNTER_UINT32}
+
         def __init__(self, **kwargs):
             self._options = kwargs
             self._kstat = kstat.Kstat()
@@ -226,16 +252,28 @@ class SunOSProvider(facet.FacetProvider):
      
             return interface_counters 
 
-        def get_interface_counters_max(self, counter):
+        def get_interface_counters_max(self, interface, counter):
             """
             Return the max value for a network stat counter
             """
-            raise NotImplementedError()
-
+            return self._MAX_VALUES[counter]
 
     class SunOSDiskStatModule(facet.modules.DiskStatModule):
 
         _DRIVERS = ['sd', 'dad', 'ssd']
+
+        _MAX_VALUES = {'nread': MAX_COUNTER_UINT64,
+                       'nwritten': MAX_COUNTER_UINT64,
+                       'reads': MAX_COUNTER_UINT32,
+                       'writes': MAX_COUNTER_UINT32, 
+                       'wtime': MAX_COUNTER_INT64,
+                       'wlentime': MAX_COUNTER_INT64,
+                       'wlastupdate': MAX_COUNTER_INT64,
+                       'rtime': MAX_COUNTER_INT64,
+                       'rlentime': MAX_COUNTER_INT64,
+                       'rlastupdate': MAX_COUNTER_INT64,
+                       'wcnt': MAX_COUNTER_UINT32,
+                       'rcnt': MAX_COUNTER_UINT32 }
 
         def __init__(self, **kwargs):
             self._options = kwargs
@@ -274,23 +312,6 @@ class SunOSProvider(facet.FacetProvider):
             """
             Return a dict of disk stat counters for the specified disk
             """
-                       
-            """
-            typedef struct kstat_io {  
-                u_longlong_t nread;       /* number of bytes read */  
-                u_longlong_t nwritten;    /* number of bytes written */  
-                uint_t       reads;       /* number of read operations */  
-                uint_t       writes;      /* number of write operations */  
-                hrtime_t wtime;           /* cumulative wait (pre-service) time */  
-                hrtime_t wlentime;        /* cumulative wait length*time product*/  
-                hrtime_t wlastupdate;     /* last time wait queue changed */  
-                hrtime_t rtime;           /* cumulative run (service) time */  
-                hrtime_t rlentime;        /* cumulative run length*time product */  
-                hrtime_t rlastupdate;     /* last time run queue changed */  
-                uint_t wcnt;              /* count of elements in wait state */  
-                uint_trcnt;               /* count of elements in run state */  
-            } kstat_io_t;
-            """
         
             disk_counters = {}
     
@@ -307,11 +328,11 @@ class SunOSProvider(facet.FacetProvider):
 
             return disk_counters 
  
-        def get_disk_counters_max(self, counter):
+        def get_disk_counters_max(self, disk, counter):
             """
             Return the max value for a disk usage counter
             """
-            raise NotImplementedError()
+            return self._MAX_VALUES[counter]
 
         def get_disk_space_total(self, mount):
             raise NotImplementedError() 

@@ -40,13 +40,13 @@ class SunOSCPUStatModuleTest(testsunos.AbstractSunOSTest):
         
         self.assertTrue(len(cpu_counters) == 4)
         self.assertTrue('user' in cpu_counters.keys())
-        self.assertTrue('system' in cpu_counters.keys())
+        self.assertTrue('kernel' in cpu_counters.keys())
         self.assertTrue('idle' in cpu_counters.keys())
-        self.assertTrue('iowait' in cpu_counters.keys())
+        self.assertTrue('wait' in cpu_counters.keys())
         self.assertTrue(cpu_counters['idle'] == 10)
-        self.assertTrue(cpu_counters['system'] == 20)
+        self.assertTrue(cpu_counters['kernel'] == 20)
         self.assertTrue(cpu_counters['user'] == 30)
-        self.assertTrue(cpu_counters['iowait'] == 40)
+        self.assertTrue(cpu_counters['wait'] == 40)
 
     @patch('kstat.Kstat')
     def test_get_cpu_counters_with_unknown_cpu(self, mock_kstat):
@@ -73,13 +73,13 @@ class SunOSCPUStatModuleTest(testsunos.AbstractSunOSTest):
         
         self.assertTrue(len(cpu_counters) == 4)
         self.assertTrue('user' in cpu_counters.keys())
-        self.assertTrue('system' in cpu_counters.keys())
+        self.assertTrue('kernel' in cpu_counters.keys())
         self.assertTrue('idle' in cpu_counters.keys())
-        self.assertTrue('iowait' in cpu_counters.keys())
+        self.assertTrue('wait' in cpu_counters.keys())
         self.assertTrue(cpu_counters['idle'] == 20)
-        self.assertTrue(cpu_counters['system'] == 40)
+        self.assertTrue(cpu_counters['kernel'] == 40)
         self.assertTrue(cpu_counters['user'] == 60)
-        self.assertTrue(cpu_counters['iowait'] == 80)
+        self.assertTrue(cpu_counters['wait'] == 80)
 
 ################################################################################
 if __name__ == "__main__":
