@@ -66,18 +66,18 @@ class SunOSDiskStatModuleTest(testsunos.AbstractSunOSTest):
             return disk_map[disk]
         mock_utils.side_effect = mock_map_disk
                 
-        self.add_mock_kstat_data('sd', '0', 'sd0', 'disk', data={'nread': 100L, 'nwritten': 200L, 'reads': 5L, 'writes': 10L, 'wlentime': 1000L, 'rlentime': 2000L})
-        self.add_mock_kstat_data('sd', '1', 'sd1', 'disk', data={'nread': 100L, 'nwritten': 200L, 'reads': 5L, 'writes': 10L, 'wlentime': 1000L, 'rlentime': 2000L})
+        self.add_mock_kstat_data('sd', '0', 'sd0', 'disk', data={'nread': 100l, 'nwritten': 200l, 'reads': 5l, 'writes': 10l, 'wtime': 10L, 'wlentime': 1000l, 'rtime': 20L, 'rlentime': 2000l})
+        self.add_mock_kstat_data('sd', '1', 'sd1', 'disk', data={'nread': 100l, 'nwritten': 200l, 'reads': 5l, 'writes': 10l, 'wtime': 10L, 'wlentime': 1000l, 'rtime': 20L, 'rlentime': 2000l})
 
         # get disks
         disk_counters = module.get_disk_counters('c3t0d0s0')
        
         self.assertTrue('reads' in disk_counters)
-        self.assertTrue('reads_bytes' in disk_counters) 
-        self.assertTrue('reads_milliseconds' in disk_counters)
         self.assertTrue('writes' in disk_counters)
-        self.assertTrue('writes_bytes' in disk_counters)
-        self.assertTrue('writes_milliseconds' in disk_counters)
+        self.assertTrue('nread' in disk_counters) 
+        self.assertTrue('nwritten' in disk_counters)
+        self.assertTrue('rlentime' in disk_counters)
+        self.assertTrue('wlentime' in disk_counters)
 
         self._mock_kstat.return_value.retrieve_all.assert_any_call('sd', -1, None)      
         mock_utils.assert_any_call('sd0', 'sd')

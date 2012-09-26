@@ -143,7 +143,7 @@ def load_facet_provider_tests(path):
             try:
                 # Import the module
                 tests[modname] = __import__(modname, globals(), locals(), ['*'])
-                print "Imported module: %s" % (modname)
+                #print "Imported module: %s" % (modname)
             except Exception:
                 print "Failed to import module: %s. %s" % (modname, traceback.format_exc())
 
@@ -186,7 +186,7 @@ if __name__ == "__main__":
             attr = getattr(platform_tests[test_module], attr_name) 
             if inspect.isclass(attr):            
                 if issubclass(attr, unittest.TestCase):
-                    print "Found Test: %s " % (attr_name)
+                    #print "Found Test: %s " % (attr_name)
                     tests.append(unittest.TestLoader().loadTestsFromTestCase(attr))
 
     # Load Base Tests
@@ -196,7 +196,7 @@ if __name__ == "__main__":
             attr = globals()[attr_name] 
             if inspect.isclass(attr):            
                 if issubclass(attr, unittest.TestCase):
-                    print "Found Test: %s " % (attr_name)
+                    #print "Found Test: %s " % (attr_name)
                     tests.append(unittest.TestLoader().loadTestsFromTestCase(attr))
 
     suite = unittest.TestSuite(tests)

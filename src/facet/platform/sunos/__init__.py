@@ -186,6 +186,53 @@ class SunOSProvider(facet.FacetProvider):
             swap_low, swap_total, swap_free = self._run_swap_command()
             return (swap_free * 1024) 
 
+    class SunOSNetworkStatModule(facet.modules.NetworkStatModule):
+
+        _DRIVERS = ['lo', 'link']
+
+        def __init__(self, **kwargs):
+            self._options = kwargs
+            self._kstat = kstat.Kstat()
+
+        def _get_kstat_interface(self, interface):
+            for drv in self._DRIVERS:
+                for kstat_interface in self._kstat.retrieve_all(drv, -1, None):
+                    if kstat_interface.data_class == 'net':
+                        if kstat_interface.name == interface:
+                            return kstat_interface
+            raise facet.FacetError("Unknown interface: %s" % (interface))
+
+        def get_interfaces(self):
+            """
+            Return a list of interfaces present on the system 
+            """
+            interfaces = []
+            for drv in self._DRIVERS:
+                for kstat_interface in self._kstat.retrieve_all(drv, -1, None):
+                    if kstat_interface.data_class == 'net':
+                        interfaces.append(kstat_interface.name)
+            return interfaces 
+
+        def get_interface_counters(self, interface):
+            """
+            Return a dict of network stat counters for the specified interface 
+            """
+            interface_counters = {}
+            
+            kstat_interface = self._get_kstat_interface(interface)
+
+            for (counter, value) in kstat_interface.items():
+                interface_counters[counter] = long(value)
+     
+            return interface_counters 
+
+        def get_interface_counters_max(self, counter):
+            """
+            Return the max value for a network stat counter
+            """
+            raise NotImplementedError()
+
+
     class SunOSDiskStatModule(facet.modules.DiskStatModule):
 
         _DRIVERS = ['sd', 'dad', 'ssd']
@@ -245,21 +292,18 @@ class SunOSProvider(facet.FacetProvider):
             } kstat_io_t;
             """
         
-            disk_counters = {'reads': 0L, 
-                             'reads_bytes': 0L, 
-                             'reads_milliseconds': 0L, 
-                             'writes': 0L, 
-                             'writes_bytes': 0L, 
-                             'writes_milliseconds': 0L} 
+            disk_counters = {}
     
             kstat_disk = self._get_kstat_disk(physical_disk_name)
 
+            disk_counters['nread'] = kstat_disk['nwritten']
+            disk_counters['nwritten'] = kstat_disk['nread']
             disk_counters['reads'] = kstat_disk['reads']
-            disk_counters['reads_bytes'] = kstat_disk['nread']
-            disk_counters['reads_milliseconds'] = kstat_disk['rlentime']
             disk_counters['writes'] = kstat_disk['writes']
-            disk_counters['writes_bytes'] = kstat_disk['nwritten']
-            disk_counters['writes_milliseconds'] = kstat_disk['wlentime'] 
+            disk_counters['wtime'] = kstat_disk['wtime']
+            disk_counters['wlentime'] = kstat_disk['wlentime'] 
+            disk_counters['rtime'] = kstat_disk['rtime']
+            disk_counters['rlentime'] = kstat_disk['rlentime']
 
             return disk_counters 
  

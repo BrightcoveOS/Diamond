@@ -89,6 +89,24 @@ class NetworkStatModule(facet.FacetModule):
     def get_module_type(self):
         return FACET_MODULE_NETWORK
 
+    def get_interfaces(self):
+        """
+        Return a list of interfaces present on the system 
+        """
+        raise NotImplementedError() 
+
+    def get_interface_counters(self, interface):
+        """
+        Return a dict of network stat counters for the specified interface 
+        """
+        raise NotImplementedError()
+    
+    def get_interface_counters_max(self, counter):
+        """
+        Return the max value for a network stat counter
+        """
+        raise NotImplementedError()
+
 class DiskStatModule(facet.FacetModule):
     
     def get_module_type(self):

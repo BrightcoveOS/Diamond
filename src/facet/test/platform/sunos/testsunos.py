@@ -78,6 +78,8 @@ class AbstractSunOSTest(testfacet.AbstractFacetModuleTest):
         mock_kstat_data_instance.data_count = data_count
         mock_kstat_data_instance.data = data
         mock_kstat_data_instance.__getitem__.side_effect = mock_kstat_data_getitem
+        if data:
+            mock_kstat_data_instance.items = data.items 
         return mock_kstat_data
 
     def get_platform_provider(self):
