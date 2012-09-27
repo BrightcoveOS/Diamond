@@ -98,6 +98,17 @@ class CollectorTestCase(unittest.TestCase):
     def setPickledResults(self, results_name, data):
         pickle.dump(data, open(self.getFixturePath(results_name), "wb"))
 
+    def assertPublishedAny(self, mock, key):
+        calls = filter(lambda x: x[0][0] == key, mock.call_args_list)
+        
+        actual_value = len(calls)
+        expected_value = 1
+        message = '%s: actual number of calls %d, expected %d' % (
+            key, actual_value, expected_value)
+
+        self.assertEqual(actual_value, expected_value, message)
+        
+
     def assertPublished(self, mock, key, value):
         calls = filter(lambda x: x[0][0] == key, mock.call_args_list)
 

@@ -60,7 +60,7 @@ class FacetLoadAverageTest(AbstractFacetTest):
         self.assertTrue(issubclass(self.facet.loadavg.__class__, facet.modules.LoadAverageModule)) 
 
     def test_get_load_average(self):
-        self.assertTrue(isinstance(self.facet['loadavg'].get_load_average(), tuple))
+        self.assertTrue(isinstance(self.facet.loadavg.get_load_average(), tuple))
 
 class FacetCPUStatTest(AbstractFacetTest):
 

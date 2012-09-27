@@ -39,5 +39,5 @@ class LoadAverageCollector(diamond.collector.Collector):
         self.publish('01', float(load_1m), 2)
         self.publish('05', float(load_5m), 2)
         self.publish('15', float(load_15m), 2)
-        self.publish('processes_running', int(processes_running))
         self.publish('processes_total',   int(processes_total))
+        self.publish('processes_running', int(processes_running))

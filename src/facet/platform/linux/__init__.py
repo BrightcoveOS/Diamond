@@ -153,3 +153,43 @@ class LinuxProvider(facet.FacetProvider):
             Return the max value for a cpu usage counter
             """
             return self._MAX_VALUES[counter]
+    
+    class LinuxMemoryStatModule(facet.modules.MemoryStatModule):
+
+        _PROC = '/proc/meminfo'
+    
+        def get_memory_used(self):
+            """
+            Return the amount of memory in bytes that is in use 
+            """
+            raise NotImplementedError() 
+
+        def get_memory_total(self):
+            """
+            Return the amount of memory in bytes is available
+            """
+            raise NotImplementedError() 
+
+        def get_memory_free(self):
+            """
+            Return the amount of memory in bytes that is not in use
+            """
+            raise NotImplementedError() 
+
+        def get_swap_used(self):
+            """
+            Return the amount of swap in bytes that is in use
+            """
+            raise NotImplementedError() 
+
+        def get_swap_total(self):
+            """
+            Return the amount of swap in bytes that is available
+            """
+            raise NotImplementedError() 
+
+        def get_swap_free(self):
+            """
+            Return the amount of swap in bytes that is not in use
+            """
+            raise NotImplementedError() 
