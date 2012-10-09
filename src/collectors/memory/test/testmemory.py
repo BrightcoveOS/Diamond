@@ -27,38 +27,25 @@ class TestMemoryCollector(CollectorTestCase):
         })
 
         self.collector = MemoryCollector(config, None)
-
-    @patch('__builtin__.open')
-    @patch('os.access', Mock(return_value=True))
+    
     @patch.object(Collector, 'publish')
-    def test_should_open_proc_meminfo(self, publish_mock, open_mock):
-        open_mock.return_value = StringIO('')
-        self.collector.collect()
-        open_mock.assert_called_once_with('/proc/meminfo')
+    @patch('memory.Facet')
+    def test_should_work_with_mock_facet_data(self, facet_mock, publish_mock):
+ 
+        # Mock cpu counter data 
+        facet_mock.return_value.memory.get_memory_usage.return_value = (2048, 4098, 8192)
+        facet_mock.return_value.memory.get_swap_usage.return_value = (1048576, 1048576, 1048576)
 
-    @patch.object(Collector, 'publish')
-    def test_should_work_with_real_data(self, publish_mock):
-        MemoryCollector.PROC = self.getFixturePath('proc_meminfo')
         self.collector.collect()
 
-        metrics = {
-            'MemTotal': 49554212,
-            'MemFree': 35194496,
-            'Buffers': 1526304,
-            'Cached': 10726736,
-            'Active': 10022168,
-            'Dirty': 24748,
-            'Inactive': 2524928,
-            'SwapTotal': 262143996,
-            'SwapFree': 262143996,
-            'SwapCached': 0,
-            'VmallocTotal': 34359738367,
-            'VmallocUsed': 445452,
-            'VmallocChunk': 34311049240
-        }
-
-        self.setDocExample(self.collector.__class__.__name__, metrics)
-        self.assertPublishedMany(publish_mock, metrics)
+        self.assertPublishedMany(publish_mock, {
+            'total': 2,
+            'free': 4,
+            'used': 8,
+            'swap.total': 1024,
+            'swap.free': 1024,
+            'swap.used': 1024,
+        })
 
 ################################################################################
 if __name__ == "__main__":

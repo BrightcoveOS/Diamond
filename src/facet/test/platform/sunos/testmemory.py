@@ -18,13 +18,9 @@ class SunOSMemoryStatModuleTest(testsunos.AbstractSunOSTest):
         return self._module
  
     @patch('kstat.Kstat')
-    def test_get_memory_used(self, mock_kstat):
+    def test_get_memory_usage(self, mock_kstat):
         pass
 
     @patch('kstat.Kstat')
-    def test_get_memory_total(self, mock_kstat):
+    def test_get_swap_usage(self, mock_kstat):
         pass
-
-    @patch('kstat.Kstat')
-    def test_get_memory_free(self, mock_kstat):
-        pass 

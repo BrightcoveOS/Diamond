@@ -109,7 +109,7 @@ class SunOSProvider(facet.FacetProvider):
             self._options = kwargs 
             self._kstat = kstat.Kstat()
 
-        def _get_installed_pages(self):
+        def _count_installed_pages(self):
             self._kstat.update()
             # kstat metric: lgrp:*:*
             installed_pages = 0L
@@ -118,33 +118,60 @@ class SunOSProvider(facet.FacetProvider):
                 installed_pages += kstat_lgrp['pages installed']
             return installed_pages
 
-        def get_memory_used(self):
-            """
-            Return the amount of memory in bytes that is in use 
-            """
+        def _get_kstat_system_pages(self):
             self._kstat.update()
             kstat_system_pages = self._kstat.retrieve('unix', -1, 'system_pages')
-            total_pages = self._get_installed_pages()
-            free_pages = kstat_system_pages['freemem']
-            used_pages = total_pages - free_pages 
-            return used_pages * resource.getpagesize() 
+            return kstat_system_pages
+    
+        def get_memory_usage(self):
+            """
+            Return memory usage in bytes (total, free, used) 
+            """
+            kstat_system_pages = self._get_kstat_system_pages() 
 
-        def get_memory_total(self):
-            """
-            Return the amount of memory in bytes is available
-            """
-            self._kstat.update()
-            total_pages = self._get_installed_pages()
-            return total_pages * resource.getpagesize() 
-
-        def get_memory_free(self):
-            """
-            Return the amount of memory in bytes that is not in use
-            """
-            self._kstat.update()
-            kstat_system_pages = self._kstat.retrieve('unix', -1, 'system_pages')
+            installed_pages = self._count_installed_pages()
             free_pages = kstat_system_pages['freemem']
-            return free_pages * resource.getpagesize() 
+            used_pages = installed_pages - free_pages
+ 
+            page_size = resource.getpagesize()
+
+            return (installed_pages * page_size, free_pages * page_size, used_pages * page_size)
+
+        def get_swap_usage(self):
+            """
+            Return swap usage in bytes (total, free, used) 
+            """
+            swap_low, swap_total, swap_free = self._run_swap_command()
+            swap_used = (swap_total - swap_free)
+            return (swap_total * 1024, swap_free * 1024, swap_used * 1024) 
+
+        #def get_memory_used(self):
+        #    """
+        #    Return the amount of memory in bytes that is in use 
+        #    """
+        #    self._kstat.update()
+        #    kstat_system_pages =  
+        #    total_pages = self._get_kstat_installed_pages()
+        #    free_pages = kstat_system_pages['freemem']
+        #    used_pages = total_pages - free_pages 
+        #    return used_pages * resource.getpagesize() 
+
+        #def get_memory_total(self):
+        #    """
+        #    Return the amount of memory in bytes is available
+        #    """
+        #    self._kstat.update()
+        #    total_pages = self._get_kstat_installed_pages()
+        #    return total_pages * resource.getpagesize() 
+
+        #def get_memory_free(self):
+        #    """
+        #    Return the amount of memory in bytes that is not in use
+        #    """
+        #    self._kstat.update()
+        #    kstat_system_pages = self._kstat.retrieve('unix', -1, 'system_pages')
+        #    free_pages = kstat_system_pages['freemem']
+        #    return free_pages * resource.getpagesize() 
 
         def _run_swap_command(self):
             """
@@ -168,27 +195,6 @@ class SunOSProvider(facet.FacetProvider):
                 if match:
                     result = (int(match.group(3)), int(match.group(4)), int(match.group(5)))
             return result
-
-        def get_swap_used(self):
-            """
-            Return the amount of swap in bytes that is in use
-            """
-            swap_low, swap_total, swap_free = self._run_swap_command()
-            return ((swap_total - swap_free) * 1024)
- 
-        def get_swap_total(self):
-            """
-            Return the amount of swap in bytes that is available
-            """
-            swap_low, swap_total, swap_free = self._run_swap_command()
-            return (swap_total * 1024) 
-
-        def get_swap_free(self):
-            """
-            Return the amount of swap in bytes that is not in use
-            """
-            swap_low, swap_total, swap_free = self._run_swap_command()
-            return (swap_free * 1024) 
 
     class SunOSNetworkStatModule(facet.modules.NetworkStatModule):
 
@@ -221,6 +227,7 @@ class SunOSProvider(facet.FacetProvider):
             self._kstat = kstat.Kstat()
 
         def _get_kstat_interface(self, interface):
+            self._kstat.update()
             for drv in self._DRIVERS:
                 for kstat_interface in self._kstat.retrieve_all(drv, -1, None):
                     if kstat_interface.data_class == 'net':
@@ -232,6 +239,7 @@ class SunOSProvider(facet.FacetProvider):
             """
             Return a list of interfaces present on the system 
             """
+            self._kstat.update()
             interfaces = []
             for drv in self._DRIVERS:
                 for kstat_interface in self._kstat.retrieve_all(drv, -1, None):
@@ -283,6 +291,7 @@ class SunOSProvider(facet.FacetProvider):
             """
             Return a kstat object for the given disk     
             """
+            self._kstat.update()
             for drv in self._DRIVERS:
                 for kstat_disk in self._kstat.retrieve_all(drv, -1, None):
                     if kstat_disk.data_class == 'disk':
@@ -300,6 +309,7 @@ class SunOSProvider(facet.FacetProvider):
             """
             Return a list of disks
             """
+            self._kstat.update()
             disks = []
             for drv in self._DRIVERS:
                 for kstat_disk in self._kstat.retrieve_all(drv, -1, None):

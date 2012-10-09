@@ -92,23 +92,17 @@ class FacetMemoryStatTest(AbstractFacetTest):
         #print "swap total: %f" % (float(self.facet.memory.get_swap_total()) / 1024.0 / 1024.0)
         #print "swap free: %f" % (float(self.facet.memory.get_swap_free()) / 1024.0 / 1024.0)
     
-    def test_get_memory_used(self):    
-        self.assertTrue(self.facet.memory.get_memory_used() > 0)
+    def test_get_memory_usage(self):   
+        total, free, used = self.facet.memory.get_memory_usage()
+        self.assertTrue(total > 0)
+        self.assertTrue(free > 0)
+        self.assertTrue(free + used == total) 
 
-    def test_get_memory_total(self):
-        self.assertTrue(self.facet.memory.get_memory_total() > 0)
-
-    def test_get_memory_free(self):
-        self.assertTrue(self.facet.memory.get_memory_free() > 0)
-
-    def test_get_swap_used(self):
-        self.assertTrue(self.facet.memory.get_swap_used() == self.facet.memory.get_swap_total() - self.facet.memory.get_swap_free())
-
-    def test_get_swap_total(self):       
-        self.assertTrue(self.facet.memory.get_swap_total() > 0)
-
-    def test_get_swap_free(self):
-        self.assertTrue(self.facet.memory.get_swap_free() > 0)
+    def test_get_swap_usage(self):
+        total, free, used = self.facet.memory.get_swap_usage()
+        self.assertTrue(total > 0)
+        self.assertTrue(free > 0)
+        self.assertTrue(free + used == total) 
 
 class FacetDiskStatTest(AbstractFacetTest):
     

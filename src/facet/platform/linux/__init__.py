@@ -157,39 +157,102 @@ class LinuxProvider(facet.FacetProvider):
     class LinuxMemoryStatModule(facet.modules.MemoryStatModule):
 
         _PROC = '/proc/meminfo'
-    
-        def get_memory_used(self):
-            """
-            Return the amount of memory in bytes that is in use 
-            """
-            raise NotImplementedError() 
 
-        def get_memory_total(self):
-            """
-            Return the amount of memory in bytes is available
-            """
-            raise NotImplementedError() 
+        _KEYS = [
+            'MemTotal',
+            'MemFree',
+            'Buffers',
+            'Cached',
+            'Active',
+            'Dirty',
+            'Inactive',
+            'SwapTotal',
+            'SwapFree',
+            'SwapCached',
+            'VmallocTotal',
+            'VmallocUsed',
+            'VmallocChunk'
+        ]
 
-        def get_memory_free(self):
-            """
-            Return the amount of memory in bytes that is not in use
-            """
-            raise NotImplementedError() 
+        def _get_memory_stats(self):
+        
+            if not os.access(self._PROC, os.R_OK):
+                raise facet.FacetError("Unable to read: %s" % (self._PROC))
 
-        def get_swap_used(self):
-            """
-            Return the amount of swap in bytes that is in use
-            """
-            raise NotImplementedError() 
+            stats = dict((k,0) for k in self._KEYS) 
 
-        def get_swap_total(self):
-            """
-            Return the amount of swap in bytes that is available
-            """
-            raise NotImplementedError() 
+            file = open(self._PROC)
+            data = file.read()
+            file.close()
+            for line in data.splitlines():
+                try:
+                    name, value, units = line.split()
+                    name = name.rstrip(':')
+                    value = int(value)
+                    stats[name] = value 
+                except ValueError:
+                    continue
+            return stats
 
-        def get_swap_free(self):
+        def get_memory_usage(self):
             """
-            Return the amount of swap in bytes that is not in use
+            Return memory usage in bytes (total, free, used) 
             """
-            raise NotImplementedError() 
+            stats = self._get_memory_stats()
+            memory_total = stats['MemTotal']
+            memory_free = stats['MemFree']
+            memory_used = memory_total - memory_free
+            return (memory_total * 1024, memory_free * 1024, memory_used * 1024) 
+
+        def get_swap_usage(self):
+            """
+            Return swap usage in bytes (total, free, used) 
+            """
+            stats = self._get_memory_stats()
+            swap_total = stats['SwapTotal']
+            swap_free = stats['SwapFree']
+            swap_used = swap_total - swap_free
+            return (swap_total * 1024, swap_free * 1024, swap_used * 1024) 
+ 
+        #def get_memory_used(self):
+        #    """
+        #    Return the amount of memory in bytes that is in use 
+        #    """
+        #    stats = self._get_memory_stats()
+        #    return (stats['MemTotal'] - stats['MemFree']) * 1024 
+
+        #def get_memory_total(self):
+        #    """
+        #    Return the amount of memory in bytes that is available
+        #    """
+        #    stats = self._get_memory_stats()
+        #    return stats['MemTotal'] * 1024
+
+        #def get_memory_free(self):
+        #    """
+        #    Return the amount of memory in bytes that is not in use
+        #    """
+        #    stats = self._get_memory_stats()
+        #    return stats['MemFree'] * 1024
+
+        #def get_swap_used(self):
+        #    """
+        #    Return the amount of swap in bytes that is in use
+        #    """
+        #    stats = self._get_memory_stats()
+        #    return (stats['SwapTotal'] - stats['SwapFree']) * 1024 
+
+        #def get_swap_total(self):
+        #    """
+        #    Return the amount of swap in bytes that is available
+        #    """
+        #    stats = self._get_memory_stats()
+        #    return stats['SwapTotal'] * 1024 
+
+        #def get_swap_free(self):
+        #    """
+        #    Return the amount of swap in bytes that is not in use
+        #    """
+        #    stats = self._get_memory_stats()
+        #    return stats['SwapFree'] * 1024 
+            

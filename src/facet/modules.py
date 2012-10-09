@@ -47,40 +47,16 @@ class MemoryStatModule(facet.FacetModule):
 
     def get_module_type(self):
         return FACET_MODULE_MEMORY
- 
-    def get_memory_used(self):
+
+    def get_memory_usage(self):
         """
-        Return the amount of memory in bytes that is in use 
+        Return memory usage in bytes (total, free, used) 
         """
         raise NotImplementedError() 
 
-    def get_memory_total(self):
+    def get_swap_usage(self):
         """
-        Return the amount of memory in bytes is available
-        """
-        raise NotImplementedError() 
-
-    def get_memory_free(self):
-        """
-        Return the amount of memory in bytes that is not in use
-        """
-        raise NotImplementedError() 
-
-    def get_swap_used(self):
-        """
-        Return the amount of swap in bytes that is in use
-        """
-        raise NotImplementedError() 
-
-    def get_swap_total(self):
-        """
-        Return the amount of swap in bytes that is available
-        """
-        raise NotImplementedError() 
-
-    def get_swap_free(self):
-        """
-        Return the amount of swap in bytes that is not in use
+        Return swap usage in bytes (total, free, used) 
         """
         raise NotImplementedError() 
 
