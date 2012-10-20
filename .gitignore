@@ -8,3 +8,4 @@ MANIFEST
 conf/diamond.conf
 storage
 conf/collectors
+sunos/Prototype
