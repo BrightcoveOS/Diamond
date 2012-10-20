@@ -145,34 +145,6 @@ class SunOSProvider(facet.FacetProvider):
             swap_used = (swap_total - swap_free)
             return (swap_total * 1024, swap_free * 1024, swap_used * 1024) 
 
-        #def get_memory_used(self):
-        #    """
-        #    Return the amount of memory in bytes that is in use 
-        #    """
-        #    self._kstat.update()
-        #    kstat_system_pages =  
-        #    total_pages = self._get_kstat_installed_pages()
-        #    free_pages = kstat_system_pages['freemem']
-        #    used_pages = total_pages - free_pages 
-        #    return used_pages * resource.getpagesize() 
-
-        #def get_memory_total(self):
-        #    """
-        #    Return the amount of memory in bytes is available
-        #    """
-        #    self._kstat.update()
-        #    total_pages = self._get_kstat_installed_pages()
-        #    return total_pages * resource.getpagesize() 
-
-        #def get_memory_free(self):
-        #    """
-        #    Return the amount of memory in bytes that is not in use
-        #    """
-        #    self._kstat.update()
-        #    kstat_system_pages = self._kstat.retrieve('unix', -1, 'system_pages')
-        #    free_pages = kstat_system_pages['freemem']
-        #    return free_pages * resource.getpagesize() 
-
         def _run_swap_command(self):
             """
             Execute the swap command and return swaplo, blocks and free
@@ -344,11 +316,5 @@ class SunOSProvider(facet.FacetProvider):
             """
             return self._MAX_VALUES[counter]
 
-        def get_disk_space_total(self, mount):
-            raise NotImplementedError() 
-
-        def get_disk_space_used(self, mount):
-            raise NotImplementedError() 
-
-        def get_disk_space_free(self, mount):
+        def get_disk_usage(self, mount):
             raise NotImplementedError() 

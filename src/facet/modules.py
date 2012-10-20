@@ -105,18 +105,12 @@ class DiskStatModule(facet.FacetModule):
         Return a dict of disk stat counters for the specified disk
         """
         raise NotImplementedError()
-    
+   
     def get_disk_counters_max(self, disk, counter):
         """
         Return the max value for a disk usage counter
         """
         raise NotImplementedError()
 
-    def get_disk_space_total(self, disk):
-        raise NotImplementedError() 
-
-    def get_disk_space_used(self, disk):
-        raise NotImplementedError() 
-
-    def get_disk_space_free(self, disk):
-        raise NotImplementedError() 
+    def get_disk_usage(self, disk):
+        raise NotImplementedError()

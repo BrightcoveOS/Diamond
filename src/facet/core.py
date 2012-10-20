@@ -102,7 +102,11 @@ class Facet(object):
                 if issubclass(cls, FacetProvider):
                     platform_provider_class = cls 
                     return platform_provider_class(**self._options)
-     
+
+    @property
+    def platform(self):
+        return facet.utils.get_platform_provider_name(self._platform)    
+ 
     @property
     def provider(self):
         return self._provider

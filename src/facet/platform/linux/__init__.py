@@ -213,46 +213,105 @@ class LinuxProvider(facet.FacetProvider):
             swap_free = stats['SwapFree']
             swap_used = swap_total - swap_free
             return (swap_total * 1024, swap_free * 1024, swap_used * 1024) 
+
+    class LinuxDiskStatModule(facet.modules.DiskStatModule):
+
+        _PROC_PARTITIONS = '/proc/partitions'
+        _PROC_DISKSTATS = '/proc/diskstats' 
+
+        def get_mounts(self):
+            """
+            Return a list of mounted filesystems
+            """
+            raise NotImplementedError() 
+
+        def get_disks(self):
+            """
+            Return a list of disks
+            """
+            disks = [] 
+            if os.access(self._PROC_PARTITIONS, os.R_OK):
+                file = open(self._PROC_PARTITIONS)
+                try:
+                    for line in file:
+                        try:
+                            # major minor  #blocks  name
+                            columns = line.split()
+                            if len(columns) < 4:
+                                continue
+                            major = int(columns[0])
+                            minor = int(columns[1])
+                            device = columns[3]
+                            if device != "name":
+                                disks.append(device)
+                        except ValueError:
+                            continue
+                finally:
+                    file.close()      
+            return disks
+
+        def _get_disk_stats(self):
+            """
+            Create a map of disks in the machine.
+
+            http://www.kernel.org/doc/Documentation/iostats.txt
+
+            Returns:
+              device -> (major, minor, DiskStatistics(...))
+            """
+            result = {}
+            if os.access(self._PROC_DISKSTATS, os.R_OK):
+                file = open(self._PROC_DISKSTATS)
+
+                for line in file:
+                    try:
+                        columns = line.split()
+                        # On early linux v2.6 versions, partitions have only 4
+                        # output fields not 11. From linux 2.6.25 partitions have
+                        # the full stats set.
+                        if len(columns) < 14:
+                            continue
+                        major = int(columns[0])
+                        minor = int(columns[1])
+                        device = columns[2]
+
+                        if device.startswith('ram') or device.startswith('loop'):
+                            continue
+
+                        result[device] = (major, minor, {
+                            'reads': float(columns[3]),
+                            'reads_merged': float(columns[4]),
+                            'reads_sectors': float(columns[5]),
+                            'reads_milliseconds': float(columns[6]),
+                            'writes': float(columns[7]),
+                            'writes_merged': float(columns[8]),
+                            'writes_sectors': float(columns[9]),
+                            'writes_milliseconds': float(columns[10]),
+                            'io_in_progress': float(columns[11]),
+                            'io_milliseconds': float(columns[12]),
+                            'io_milliseconds_weighted': float(columns[13])
+                        })
+                    except ValueError:
+                        continue
+                file.close()
+            return result       
  
-        #def get_memory_used(self):
-        #    """
-        #    Return the amount of memory in bytes that is in use 
-        #    """
-        #    stats = self._get_memory_stats()
-        #    return (stats['MemTotal'] - stats['MemFree']) * 1024 
+        def get_disk_counters(self, disk):
+            """
+            Return a dict of disk stat counters for the specified disk
+            """
+            disk_stats = self._get_disk_stats()
+            try:
+                return disk_stats[disk][2] 
+            except KeyError:
+                raise facet.FacetError("Unknown disk: %s" % disk) 
+ 
+        def get_disk_counters_max(self, disk, counter):
+            """
+            Return the max value for a disk usage counter
+            """
+            raise NotImplementedError()
 
-        #def get_memory_total(self):
-        #    """
-        #    Return the amount of memory in bytes that is available
-        #    """
-        #    stats = self._get_memory_stats()
-        #    return stats['MemTotal'] * 1024
-
-        #def get_memory_free(self):
-        #    """
-        #    Return the amount of memory in bytes that is not in use
-        #    """
-        #    stats = self._get_memory_stats()
-        #    return stats['MemFree'] * 1024
-
-        #def get_swap_used(self):
-        #    """
-        #    Return the amount of swap in bytes that is in use
-        #    """
-        #    stats = self._get_memory_stats()
-        #    return (stats['SwapTotal'] - stats['SwapFree']) * 1024 
-
-        #def get_swap_total(self):
-        #    """
-        #    Return the amount of swap in bytes that is available
-        #    """
-        #    stats = self._get_memory_stats()
-        #    return stats['SwapTotal'] * 1024 
-
-        #def get_swap_free(self):
-        #    """
-        #    Return the amount of swap in bytes that is not in use
-        #    """
-        #    stats = self._get_memory_stats()
-        #    return stats['SwapFree'] * 1024 
-            
+        def get_disk_usage(self, disk):
+            raise NotImplementedError()
+        
