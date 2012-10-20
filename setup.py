@@ -65,7 +65,6 @@ def pkgPath(root, path, rpath="/"):
 
 pkgPath('share/diamond/collectors', 'src/collectors')
 
-<<<<<<< HEAD
 def get_native_extensions():
     facet_native_module = Extension('facet.utils.sunos_utils',
                     define_macros = [('MAJOR_VERSION', '1'),
@@ -79,8 +78,6 @@ def get_native_extensions():
 version = get_version()
 
 setup(
-    name='diamond',
-    version='4.0.0',
     name='diamond',
     version=version,
     url='https://github.com/BrightcoveOS/Diamond',

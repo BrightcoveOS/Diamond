@@ -1,7 +1,7 @@
 DESTDIR=/
 PROJECT=diamond
-VERSION :=$(shell bash version.sh )
-RELEASE :=$(shell ls -1 dist/*.noarch.rpm 2>/dev/null | wc -l )
+VERSION := $(shell bash version.sh )
+RELEASE := $(shell ls -1 dist/*.noarch.rpm 2>/dev/null | wc -l )
 PLATFORM := $(shell uname -p)
 
 all:
@@ -67,7 +67,7 @@ tar: sdist
 
 pkg: buildpkg
 
-buildpkg:
+buildpkg: version
 	./setup.py bdist
 	mkdir -p build/root/ build/pkg/
 	cd build/root/ && tar -xvf ../../dist/$(PROJECT)-$(VERSION)*.tar.gz
