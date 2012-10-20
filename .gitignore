@@ -9,3 +9,5 @@ conf/diamond.conf
 storage
 conf/collectors
 sunos/Prototype
+version.txt
+src/diamond/version.py
